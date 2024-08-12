@@ -1,0 +1,79 @@
+// -------------------------------------
+// Pipeline Configuration Section
+properties([
+    parameters([
+        string(name: 'PROJECT_NAME', defaultValue: 'drifter', description: 'firmware hex file name', ),
+        string(name: 'TEST_CONFIG', defaultValue: 'STM32L052/DRIFTER', description: 'PRODUCT pyTestBox test configuration', ),
+        string(name: 'PYTESTBOX_BRANCH_NAME', defaultValue: '*/product/drifter/npi_settings',
+            description: 'pyTestBox repo branch name', ),
+        string(name: 'PYTESTBOX_LEVELS',
+            defaultValue: 'Interface,Business,Functionality,ErrorHandling,Robustness,Security,Time-consuming',
+            description: 'levels used during test execution stage', ),
+        string(name: 'SITE_LABEL', defaultValue: 'ind', description: 'label to select node on a particular site', ),
+    ]),
+// End of Pipeline Configuration Section
+])
+
+timestamps {
+
+    node (label: "${params.PROJECT_NAME} && ${params.SITE_LABEL}") {
+        stage ('Test Execution Job - Checkout') {
+            checkout(
+                [$class: 'GitSCM',
+                    branches: [[name: "${params.PYTESTBOX_BRANCH_NAME}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: scm.extensions + [[$class: 'CleanCheckout'],
+                        [$class: 'PruneStaleBranch'], pruneTags(true),
+                        [$class: 'SubmoduleOption',
+                        disableSubmodules: false,
+                        parentCredentials: true,
+                        recursiveSubmodules: true,
+                        reference: '',
+                        trackingSubmodules: false
+                    ]],
+                    submoduleCfg: [],
+                    userRemoteConfigs: [
+                     [credentialsId: 'GithubProductsCIToken',
+                      url: "https://github.com/Logitech/py-test-box.git"]
+                    ]
+                ]
+            )
+        } // End of stage ('Test Execution Job - Checkout')
+
+        stage ('Test Execution Job - Build') {
+            script {
+
+                try {
+                      timeout(time: 60, unit: 'MINUTES', activity: true) {
+                        // Shell Unit Test step - framework initialization
+                        sh """
+                          python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py
+                        """
+
+                        // Shell Integration Test step - tests execution
+                        sh """
+                          python3 PYTESTBOX/TESTS/main.py  \
+                              --file=PYTESTBOX/TESTS/SETTINGS/testFilter.txt \
+                              --variant=PRODUCT/${params.TEST_CONFIG} \
+                              --product=PYTESTBOX \
+                              --output=console,log,junit,jrl \
+                              --level=${params.PYTESTBOX_LEVELS}
+                        """
+                      }
+                }
+                finally {
+                    try {
+                        // Permission cleanup
+                        sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                    }
+                    catch(all) {
+                        echo 'Error cleaning up permissions'
+                    }
+                }
+            }
+          // Save JUnit Results
+          junit "**/LOCAL/**/${params.TEST_CONFIG}/**/*.xml"
+          archiveArtifacts allowEmptyArchive: true, artifacts: "**/LOCAL/**/${params.TEST_CONFIG}/**/log/*.log", caseSensitive: true, defaultExcludes: true, fingerprint: false, onlyIfSuccessful: false
+        } // End of stage ('Test Execution Job - Build')
+    } // End of node (label: "${params.PROJECT_NAME}")
+} // End of timestamps

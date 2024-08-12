@@ -1,0 +1,538 @@
+pipeline {
+    agent none
+
+    parameters {
+        choice(name: "TEST_LEVELS_CHOICE", choices: ["Default", "Min", "Max"], description: "Pick test level")
+        choice(name: "PYRASPI_NODE_TYPE", choices: ["Standard", "KosmosV2"], description: "Select node type")
+    }
+
+    stages {
+        stage("Auto-Tests") {
+            environment {
+                PYRASPI_NODE_LABEL = getNodeLabel(params.PYRASPI_NODE_TYPE)
+            }
+            parallel {
+                stage("pyLint") {
+                    agent {
+                        node {
+                            label "library"
+                        }
+                    }
+
+                    steps {
+                        sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                        sh "python3 -m unittest discover ./PYTESTBOX/CICD/pylint_logi/tests/"
+                        sh "pylint --disable=all --enable=decorator-order-checker PYTESTBOX/TESTS/TESTSUITES/pytestbox"
+                        sh "python3 PYTESTBOX/TESTS/TOOLS/custom_linter/main.py --pattern features.py"
+                    }
+                }
+
+                stage("pyHarness") {
+                    agent {
+                        node {
+                            label "library"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                sh "python3 PYTESTBOX/LIBS/PYHARNESS/pyharness/__main__.py"
+                            }
+                            finally {
+                                try {
+                                    // Permission cleanup
+                                    sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                                }
+                                catch(all) {
+                                    echo 'Error cleaning up permissions'
+                                }
+                            }
+
+                            archiveArtifacts(artifacts: "**/LOCAL/**/pyharness.xml", fingerprint: true)
+                            junit "**/LOCAL/**/pyharness.xml"
+                        }
+                    }
+                }
+
+                stage("pyHid") {
+                    agent {
+                        node {
+                            label "library"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                sh "python3 PYTESTBOX/LIBS/PYHID/pyhid/__main__.py"
+                            }
+                            finally {
+                                try {
+                                    // Permission cleanup
+                                    sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                                }
+                                catch(all) {
+                                    echo 'Error cleaning up permissions'
+                                }
+                            }
+
+                            archiveArtifacts(artifacts: "**/LOCAL/**/pyhid.xml", fingerprint: true)
+                            junit "**/LOCAL/**/pyhid.xml"
+                        }
+                    }
+                }
+
+                stage("pyTransport") {
+                    agent {
+                        node {
+                            label "library"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                sh "python3 PYTESTBOX/LIBS/PYTRANSPORT/pytransport/__main__.py"
+                            }
+                            finally {
+                                try {
+                                    // Permission cleanup
+                                    sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                                }
+                                catch(all) {
+                                    echo 'Error cleaning up permissions'
+                                }
+                            }
+
+                            archiveArtifacts(artifacts: "**/LOCAL/**/pytransport.xml", fingerprint: true)
+                            junit "**/LOCAL/**/pytransport.xml"
+                        }
+                    }
+                }
+
+                stage("pyChannel") {
+                    agent {
+                        node {
+                            label "library"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                sh "python3 PYTESTBOX/LIBS/PYCHANNEL/pychannel/__main__.py"
+                            }
+                            finally {
+                                try {
+                                    // Permission cleanup
+                                    sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                                }
+                                catch(all) {
+                                    echo 'Error cleaning up permissions'
+                                }
+                            }
+
+                            archiveArtifacts(artifacts: "**/LOCAL/**/pychannel.xml", fingerprint: true)
+                            junit "**/LOCAL/**/pychannel.xml"
+                        }
+                    }
+                }
+
+                stage("pyTestBox") {
+                    agent {
+                        node {
+                            label "library"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                dir(path: "PYTESTBOX/TESTS") {
+                                    sh """
+                                        python3 main.py --file=SETTINGS/testFilter.txt --variant=AUTO_TESTS \
+                                            --product=PYTESTBOX --target=DEVICE --output=console,log,junit,jrl
+                                    """
+                                }
+                            }
+                            finally {
+                                try {
+                                    // Permission cleanup
+                                    sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                                }
+                                catch(all) {
+                                    echo 'Error cleaning up permissions'
+                                }
+                            }
+
+                            archiveArtifacts(artifacts: "**/AUTO_TESTS/**/*.xml", fingerprint: true)
+                            junit "**/AUTO_TESTS/**/*.xml"
+                        }
+                    }
+                }
+
+                stage("pyLibrary") {
+                    agent {
+                        node {
+                            label "library"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                sh "python3 PYTESTBOX/LIBS/PYLIBRARY/pylibrary/__main__.py"
+                            }
+                            finally {
+                                try {
+                                    // Permission cleanup
+                                    sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                                }
+                                catch(all) {
+                                    echo 'Error cleaning up permissions'
+                                }
+                            }
+
+                            archiveArtifacts(artifacts: "**/LOCAL/**/pylibrary.xml", fingerprint: true)
+                            junit "**/LOCAL/**/pylibrary.xml"
+                        }
+                    }
+                }
+
+                stage("pyRaspi") {
+                    agent {
+                        node {
+                            label "${PYRASPI_NODE_LABEL}"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                sh "python3 PYTESTBOX/CICD/ciscripts/power_supply.py -i -g -c -e"
+                                sh "python3 PYTESTBOX/LIBS/PYRASPI/pyraspi/__main__.py"
+                            }
+                            finally {
+                                try {
+                                    // Permission cleanup
+                                    sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                                }
+                                catch(all) {
+                                    echo 'Error cleaning up permissions'
+                                }
+                            }
+
+                            archiveArtifacts(artifacts: "**/LOCAL/**/pyraspi.xml", fingerprint: true)
+                            junit "**/LOCAL/**/pyraspi.xml"
+                        }
+                    }
+                }
+            }
+        } // End of stage ("Build Job - Build")
+
+        stage("Products") {
+            environment {
+                TEST_LEVELS = getTestLevels(params.TEST_LEVELS_CHOICE , env.BRANCH_NAME)
+            }
+
+            parallel {
+                stage("harpy") {
+                    agent {
+                        node {
+                            label "harpy"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                dir(path: "PYTESTBOX/TESTS") {
+                                    timeout(unit: "MINUTES", time: 30) {
+                                        sh """
+                                            python3 main.py --file=SETTINGS/testFilter.txt \
+                                                --variant=PRODUCT/STM32L100/HARPY_CORDED --product=PYTESTBOX \
+                                                --target=DEVICE --output=console,log,junit,jrl  --level=${TEST_LEVELS}
+                                        """
+                                    }
+                                }
+                            }
+                            finally {
+                                try {
+                                    // Save artifacts
+                                    archiveArtifacts(artifacts: "**/LOCAL/**/HARPY_CORDED/**/*.xml", fingerprint: true)
+                                    archiveArtifacts(artifacts: "**/LOCAL/**/HARPY_CORDED/**/*.log", allowEmptyArchive: true)
+                                }
+                                catch(all) {
+                                    echo 'Error saving artifacts'
+                                }
+                            }
+
+                            junit "**/LOCAL/**/HARPY_CORDED/**/*.xml"
+                        }
+                    }
+                }
+
+                stage("footloose") {
+                    agent {
+                        node {
+                            label "footloose"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                dir(path: "PYTESTBOX/TESTS") {
+                                    timeout(time: 60, unit: "MINUTES") {
+                                        sh """
+                                            python3 main.py --file=SETTINGS/testFilter.txt \
+                                                --variant=PRODUCT/GRAVITON/FOOTLOOSE --product=PYTESTBOX \
+                                                --target=DEVICE --output=console,log,junit,jrl --level=${TEST_LEVELS}
+                                        """
+                                    }
+                                }
+                            }
+                            finally {
+                                try {
+                                    // Save artifacts
+                                    archiveArtifacts(artifacts: "**/LOCAL/**/FOOTLOOSE/**/*.xml", fingerprint: true)
+                                    archiveArtifacts(artifacts: "**/LOCAL/**/FOOTLOOSE/**/*.log", allowEmptyArchive: true)
+                                }
+                                catch(all) {
+                                    echo 'Error saving artifacts'
+                                }
+                            }
+
+                            junit "**/LOCAL/**/FOOTLOOSE/**/*.xml"
+                        }
+                    }
+                }
+
+                stage("hyjal_hero") {
+                    agent {
+                        node {
+                            label "hero"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                dir(path: "PYTESTBOX/TESTS") {
+                                    timeout(time: 60, unit: "MINUTES") {
+                                        sh """
+                                            python3 main.py --file=SETTINGS/testFilter.txt \
+                                                --variant=PRODUCT/STM32L100/HYJAL_HERO --product=PYTESTBOX \
+                                                --target=DEVICE --output=console,log,junit,jrl --level=${TEST_LEVELS}
+                                        """
+                                    }
+                                }
+                            }
+                            finally {
+                                try {
+                                    // Save artifacts
+                                    archiveArtifacts "**/LOCAL/**/HYJAL_HERO/**/*.xml"
+                                    archiveArtifacts(artifacts: "**/LOCAL/**/HYJAL_HERO/**/*.log", allowEmptyArchive: true)
+                                }
+                                catch(all) {
+                                    echo 'Error saving artifacts'
+                                }
+                            }
+
+                            junit "**/LOCAL/**/HYJAL_HERO/**/*.xml"
+                        }
+                    }
+                }
+
+                stage("herzog") {
+                    agent {
+                        node {
+                            label "herzog && power_board_v3"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                            try {
+                                sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                                sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                                sh "python3 PYTESTBOX/CICD/ciscripts/power_supply.py -i -g -c -e"
+                                sh "python3 PYTESTBOX/CICD/ciscripts/power_supply.py -i -s True -v 3.8 -o"
+                                sh """
+                                    mkdir -p PYTESTBOX/TESTS/DFU_FILES
+                                    cp PYTESTBOX/TESTS/SETTINGS/PYTESTBOX/PRODUCT/QUARK/HERZOG/BUILD_9916/herzog_tog6.*\
+                                        PYTESTBOX/TESTS/DFU_FILES
+                                """
+                                sh """
+                                    python3 PYTESTBOX/CICD/ciscripts/jlink.py -v -f \
+                                        PYTESTBOX/TESTS/DFU_FILES/herzog_tog6.hex -p QUARK256
+                                """
+                                sh "python3 PYTESTBOX/CICD/ciscripts/power_supply.py -e"
+                                dir(path: "PYTESTBOX/TESTS") {
+                                    timeout(time: 60, unit: "MINUTES", activity: true) {
+                                        timestamps() {
+                                            sh """
+                                                python3 main.py --file=SETTINGS/testFilter.txt \
+                                                    --variant=PRODUCT/QUARK/HERZOG/BUILD_9916 --product=PYTESTBOX \
+                                                    --target=DEVICE --output=console,log,junit,jrl \
+                                                    --level=${TEST_LEVELS}
+                                            """
+                                        }
+                                    }
+                                }
+                            }
+                            finally {
+                                try {
+                                    // Save artifacts
+                                    archiveArtifacts "**/LOCAL/**/HERZOG/**/*.xml"
+                                    archiveArtifacts(artifacts: "**/LOCAL/**/HERZOG/**/*.log", allowEmptyArchive: true)
+                                }
+                                catch(all) {
+                                    echo 'Error saving artifacts'
+                                }
+                            }
+
+                            junit "**/LOCAL/**/HERZOG/**/*.xml"
+                        }
+                    }
+                }
+
+                stage("snapper") {
+                    agent {
+                        node {
+                            label "snapper"
+                        }
+                    }
+                    when { beforeAgent true
+                           not { branch pattern: "perso/**/*"} }
+
+                    steps {
+                        script {
+                          sh "sudo find /tmp -name *.so -mtime +1 -user Jenkins -delete"
+                          sh "python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py"
+                          sh "python3 PYTESTBOX/CICD/ciscripts/power_supply.py -i -g -c -e"
+                          sh "python3 PYTESTBOX/CICD/ciscripts/power_supply.py -i -s True -v 1.6 -o"
+                          sh """
+                          mkdir -p PYTESTBOX/TESTS/DFU_FILES
+                          cp PYTESTBOX/TESTS/SETTINGS/PYTESTBOX/PRODUCT/MESON/SNAPPER/B0002/snapper_prod.* \
+                          PYTESTBOX/TESTS/DFU_FILES
+                          """
+                          sh """
+                          python3 PYTESTBOX/CICD/ciscripts/jlink.py -e -v -f \
+                          PYTESTBOX/TESTS/DFU_FILES/snapper_prod.hex -p MESON
+                          """
+                          sh "python3 PYTESTBOX/CICD/ciscripts/power_supply.py -e"
+                          dir(path: "PYTESTBOX/TESTS") {
+                            timeout(time: 5, unit: "MINUTES", activity: true) {
+                              timestamps() {
+                                sh """
+                                python3 main.py --file=SETTINGS/testFilter.txt \
+                                --variant=RECEIVER/MESON/BLE_PRO/MEZZY/SETUP/SNAPPER \
+                                --product=PYTESTBOX --output=console,log,junit,jrl --level=CiScript \
+                                --keep --loop-count=2 --loop-stop=success
+                                """
+                              }
+                            }
+                          }
+                        }
+                        script {
+                            try {
+                                dir(path: "PYTESTBOX/TESTS") {
+                                    timeout(time: 60, unit: "MINUTES", activity: true) {
+                                        timestamps() {
+                                            sh """
+                                                python3 main.py --file=SETTINGS/testFilter.txt \
+                                                    --variant=PRODUCT/MESON/SNAPPER/B0002 --product=PYTESTBOX \
+                                                    --target=DEVICE --output=console,log,junit,jrl \
+                                                    --level=${TEST_LEVELS}
+                                            """
+                                        }
+                                    }
+                                }
+                            }
+                            finally {
+                                try {
+                                    // Save artifacts
+                                    archiveArtifacts "**/LOCAL/**/SNAPPER/**/*.xml"
+                                    archiveArtifacts(artifacts: "**/LOCAL/**/SNAPPER/**/*.log", allowEmptyArchive: true)
+                                }
+                                catch(all) {
+                                    echo 'Error saving artifacts'
+                                }
+                            }
+
+                            junit "**/LOCAL/**/SNAPPER/**/*.xml"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage("Consolidation") {
+            steps {
+                timestamps() {
+                    echo "End of pipeline"
+                }
+            }
+        }
+    }
+}
+
+def getTestLevels(choice, branchName) {
+    if (choice == "Max" || (choice == "Default" && branchName == "develop")) {
+        return "Interface,Business,Functionality,ErrorHandling,Robustness"
+    } else {
+        return "Interface,Business"
+    }
+}
+
+def getNodeLabel(choice) {
+    if (choice == "KosmosV2") {
+        return "kosmos_v2"
+    } else {
+        return "power_board_v3"
+    }
+}

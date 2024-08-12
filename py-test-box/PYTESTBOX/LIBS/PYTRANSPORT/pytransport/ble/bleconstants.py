@@ -1,0 +1,1127 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# ------------------------------------------------------------------------------
+# Python Test Box
+# ------------------------------------------------------------------------------
+"""
+:package: pytransport.ble.bleconstants
+:brief: BLE constants
+:author: Stanislas Cottard <scottard@logitech.com>
+:date: 2021/02/18
+"""
+# ------------------------------------------------------------------------------
+# imports
+# ------------------------------------------------------------------------------
+from enum import Enum
+from enum import IntEnum
+from enum import auto
+
+from pylibrary.tools.util import ContainsEnumMeta
+
+
+# ------------------------------------------------------------------------------
+# implementation
+# ------------------------------------------------------------------------------
+class _ForLoopMapIntEnumBuilder(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Builder for an int enum created with dynamically added values in a for loop.
+    """
+# end class _ForLoopMapIntEnumBuilder
+
+
+class _ForLoopMapFloatEnumBuilder(float, Enum, metaclass=ContainsEnumMeta):
+    """
+    Builder for a float enum created with dynamically added values in a for loop.
+    """
+# end class _ForLoopMapFloatEnumBuilder
+
+
+class BleGenericIntConstant(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Generic int constant that can be found in the Bluetooth specifications.
+    """
+    # BLE address representation (Bluetooth Core Spec v5.3 Vol 3 Part C Section 3.2.1.3)
+    BLE_ADDRESS_LENGTH = 6  # in bytes
+    # Mask to get the notify/indicate status in the CCCD value
+    # (Bluetooth Core Spec v5.3 Vol 3 Part G Section 3.3.3.3 Table 3.11)
+    NOTIFY_STATUS_IN_CCCD_MASK = 0x01
+    INDICATE_STATUS_IN_CCCD_MASK = 0x02
+    # Bluetooth Core Spec v5.3 Vol 4 Part E Section 7.7.65.1, page 2248 in parameter Supervision_Timeout table
+    SUPERVISION_TIMEOUT_GRANULARITY = 10  # in ms
+# end class BleGenericIntConstant
+
+
+class BleGenericFloatConstant(float, Enum, metaclass=ContainsEnumMeta):
+    """
+    Generic float constant that can be found in the Bluetooth specifications.
+    """
+    # Bluetooth Core Spec v5.3 Vol 4 Part E Section 7.7.65.1, page 2248 in parameter Connection_Interval table
+    CONNECTION_INTERVAL_GRANULARITY = 1.25  # in ms
+    # Bluetooth Core Spec v5.3 Vol 4 Part E Section 7.8.10, page 2365 in parameter LE_Scan_Interval and
+    # LE_Scan_Window table
+    SCAN_INTERVAL_WINDOWS_GRANULARITY = 0.625  # in ms
+# end class BleGenericFloatConstant
+
+
+class BleUuid128bits:
+    # The base UUID for 16 bits UUID can be found in the BLUETOOTH CORE SPECIFICATION Version 5.3 Vol 3,
+    # Part B, Section 2.5.1
+    # The third and fourth bytes (so at index 2 and 3 in the table) are the ones used for the 16 bits UUID
+    # Those 16 bits UUID can be found here:
+    # https://www.bluetooth.com/specifications/assigned-numbers/service-discovery/
+    BLE_BASE_16_BITS_UUID = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B,
+                             0x34, 0xFB]
+# end class BleUuid128bits
+
+
+class AncsUuids:
+    # The Apple Notification Center Service (ANCS) UUID can be found here:
+    # https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleNotificationCenterServiceSpecification/Specification/Specification.html
+    DATA_SOURCE = [0x22, 0xEA, 0xC6, 0xE9, 0x24, 0xD6, 0x4B, 0xB5, 0xBE, 0x44, 0xB3, 0x6A, 0xCE, 0x7C, 0x7B, 0xFB]
+    CONTROL_POINT = [0x69, 0xD1, 0xD8, 0xF3, 0x45, 0xE1, 0x49, 0xA8, 0x98, 0x21, 0x9B, 0xBD, 0xFD, 0xAA, 0xD9, 0xD9]
+    NOTIFICATION_SOURCE = [
+        0x9F, 0xBF, 0x12, 0x0D, 0x63, 0x01, 0x42, 0xD9, 0x8C, 0x58, 0x25, 0xE6, 0x99, 0xA2, 0x1D, 0xBD]
+    ANCS = [0x79, 0x05, 0xF4, 0x31, 0xB5, 0xCE, 0x4E, 0x99, 0xA4, 0x0F, 0x4B, 0x1E, 0x12, 0x2D, 0x00, 0xD0]
+# end class AncsUuids
+
+
+class BleUuidStandardDeclaration(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the standard declarations UUID from Bluetooth SIG
+
+    Source:
+    https://btprodspecificationrefs.blob.core.windows.net/assigned-values/16-bit%20UUID%20Numbers%20Document.pdf
+    """
+    PRIMARY_SERVICE_DECLARATION = 0x2800
+    SECONDARY_SERVICE_DECLARATION = 0x2801
+    INCLUDE_DECLARATION = 0x2802
+    CHARACTERISTIC_DECLARATION = 0x2803
+# end class BleUuidStandardDeclaration
+
+
+class BleUuidStandardService(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the standard services UUID from Bluetooth SIG
+
+    Source (for logitech specific):
+    https://btprodspecificationrefs.blob.core.windows.net/assigned-values/16-bit%20UUID%20Numbers%20Document.pdf
+    """
+    GENERIC_ACCESS = 0x1800
+    GENERIC_ATTRIBUTE = 0x1801
+    IMMEDIATE_ALERT = 0x1802
+    LINK_LOSS = 0x1803
+    TX_POWER = 0x1804
+    CURRENT_TIME = 0x1805
+    REFERENCE_TIME_UPDATE = 0x1806
+    NEXT_DST_CHANGE = 0x1807
+    GLUCOSE = 0x1808
+    HEALTH_THERMOMETER = 0x1809
+    DEVICE_INFORMATION = 0x180A
+    HEART_RATE = 0x180D
+    PHONE_ALERT_STATUS = 0x180E
+    BATTERY_SERVICE = 0x180F
+    BLOOD_PRESSURE = 0x1810
+    ALERT_NOTIFICATION = 0x1811
+    HUMAN_INTERFACE_DEVICE = 0x1812
+    SCAN_PARAMETERS = 0x1813
+    RUNNING_SPEED_AND_CADENCE = 0x1814
+    AUTOMATION_IO = 0x1815
+    CYCLING_SPEED_AND_CADENCE = 0x1816
+    CYCLING_POWER = 0x1818
+    LOCATION_AND_NAVIGATION = 0x1819
+    ENVIRONMENTAL_SENSING = 0x181A
+    BODY_COMPOSITION = 0x181B
+    USER_DATA = 0x181C
+    WEIGHT_SCALE = 0x181D
+    BOND_MANAGEMENT = 0x181E
+    CONTINUOUS_GLUCOSE_MONITORING = 0x181F
+    INTERNET_PROTOCOL_SUPPORT = 0x1820
+    INDOOR_POSITIONING = 0x1821
+    PULSE_OXIMETER = 0x1822
+    HTTP_PROXY = 0x1823
+    TRANSPORT_DISCOVERY = 0x1824
+    OBJECT_TRANSFER = 0x1825
+    FITNESS_MACHINE = 0x1826
+    MESH_PROVISIONING = 0x1827
+    MESH_PROXY = 0x1828
+    RECONNECTION_CONFIGURATION = 0x1829
+    INSULIN_DELIVERY = 0x183A
+    BINARY_SENSOR = 0x183B
+    EMERGENCY_CONFIGURATION = 0x183C
+    PHYSICAL_ACTIVITY_MONITOR = 0x183E
+    AUDIO_INPUT_CONTROL = 0x1843
+    VOLUME_CONTROL = 0x1844
+    VOLUME_OFFSET_CONTROL = 0x1845
+    COORDINATED_SET_IDENTIFICATION_SERVICE = 0x1846
+    DEVICE_TIME = 0x1847
+    MEDIA_CONTROL_SERVICE = 0x1848
+    GENERIC_MEDIA_CONTROL_SERVICE = 0x1849
+    CONSTANT_TONE_EXTENSION = 0x184A
+    TELEPHONE_BEARER_SERVICE = 0x184B
+    GENERIC_TELEPHONE_BEARER_SERVICE = 0x184C
+    MICROPHONE_CONTROL = 0x184D
+
+    # LOGITECH. In the source table, it is in the allocation type "16-bit UUID for Members"
+    LOGITECH_GENERIC_BLE = 0xFE61
+    LOGITECH_BLE_PRO = 0xFD72
+    GOOGLE_FAST_PAIR = 0xFE2C
+# end class BleUuidStandardService
+
+
+class BleUuidStandardDescriptor(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the standard descriptors UUID from Bluetooth SIG
+
+    Source: https://btprodspecificationrefs.blob.core.windows.net/assigned-values/16-bit%20UUID%20Numbers%20Document.pdf
+    """
+    CHARACTERISTIC_EXTENDED_PROPERTIES = 0x2900
+    CHARACTERISTIC_USER_DESCRIPTION = 0x2901
+    CLIENT_CHARACTERISTIC_CONFIGURATION = 0x2902
+    SERVER_CHARACTERISTIC_CONFIGURATION = 0x2903
+    CHARACTERISTIC_PRESENTATION_FORMAT = 0x2904
+    CHARACTERISTIC_AGGREGATE_FORMAT = 0x2905
+    VALID_RANGE = 0x2906
+    EXTERNAL_REPORT_REFERENCE = 0x2907
+    REPORT_REFERENCE = 0x2908
+    NUMBER_OF_DIGITALS = 0x2909
+    VALUE_TRIGGER_SETTING = 0x290A
+    ES_CONFIGURATION = 0x290B
+    ES_MEASUREMENT = 0x290C
+    ES_TRIGGER_SETTING = 0x290D
+    TIME_TRIGGER_SETTING = 0x290E
+    COMPLETE_BR_EDR_TRANSPORT_BLOCK_DATA = 0x290F
+# end class BleUuidStandardDescriptor
+
+
+class BleUuidStandardCharacteristicAndObjectType(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the standard characteristics UUID from Bluetooth SIG
+
+    Source: https://www.bluetooth.com/specifications/assigned-numbers/
+    """
+    DEVICE_NAME = 0x2A00
+    APPEARANCE = 0x2A01
+    PERIPHERAL_PRIVACY_FLAG = 0x2A02
+    RECONNECTION_ADDRESS = 0x2A03
+    PERIPHERAL_PREFERRED_CONNECTION_PARAMETERS = 0x2A04
+    SERVICE_CHANGED = 0x2A05
+    ALERT_LEVEL = 0x2A06
+    TX_POWER_LEVEL = 0x2A07
+    DATE_TIME = 0x2A08
+    DAY_OF_WEEK = 0x2A09
+    DAY_DATE_TIME = 0x2A0A
+    EXACT_TIME_256 = 0x2A0C
+    DST_OFFSET = 0x2A0D
+    TIME_ZONE = 0x2A0E
+    LOCAL_TIME_INFORMATION = 0x2A0F
+    TIME_WITH_DST = 0x2A11
+    TIME_ACCURACY = 0x2A12
+    TIME_SOURCE = 0x2A13
+    REFERENCE_TIME_INFORMATION = 0x2A14
+    TIME_UPDATE_CONTROL_POINT = 0x2A16
+    TIME_UPDATE_STATE = 0x2A17
+    GLUCOSE_MEASUREMENT = 0x2A18
+    BATTERY_LEVEL = 0x2A19
+    TEMPERATURE_MEASUREMENT = 0x2A1C
+    TEMPERATURE_TYPE = 0x2A1D
+    INTERMEDIATE_TEMPERATURE = 0x2A1E
+    MEASUREMENT_INTERVAL = 0x2A21
+    BOOT_KEYBOARD_INPUT_REPORT = 0x2A22
+    SYSTEM_ID = 0x2A23
+    MODEL_NUMBER_STRING = 0x2A24
+    SERIAL_NUMBER_STRING = 0x2A25
+    FIRMWARE_REVISION_STRING = 0x2A26
+    HARDWARE_REVISION_STRING = 0x2A27
+    SOFTWARE_REVISION_STRING = 0x2A28
+    MANUFACTURER_NAME_STRING = 0x2A29
+    IEEE_11073_20601_REGULATORY_CERTIFICATION_DATA_LIST = 0x2A2A
+    CURRENT_TIME = 0x2A2B
+    MAGNETIC_DECLINATION = 0x2A2C
+    SCAN_REFRESH = 0x2A31
+    BOOT_KEYBOARD_OUTPUT_REPORT = 0x2A32
+    BOOT_MOUSE_INPUT_REPORT = 0x2A33
+    GLUCOSE_MEASUREMENT_CONTEXT = 0x2A34
+    BLOOD_PRESSURE_MEASUREMENT = 0x2A35
+    INTERMEDIATE_CUFF_PRESSURE = 0x2A36
+    HEART_RATE_MEASUREMENT = 0x2A37
+    BODY_SENSOR_LOCATION = 0x2A38
+    HEART_RATE_CONTROL_POINT = 0x2A39
+    ALERT_STATUS = 0x2A3F
+    RINGER_CONTROL_POINT = 0x2A40
+    RINGER_SETTING = 0x2A41
+    ALERT_CATEGORY_ID_BIT_MASK = 0x2A42
+    ALERT_CATEGORY_ID = 0x2A43
+    ALERT_NOTIFICATION_CONTROL_POINT = 0x2A44
+    UNREAD_ALERT_STATUS = 0x2A45
+    NEW_ALERT = 0x2A46
+    SUPPORTED_NEW_ALERT_CATEGORY = 0x2A47
+    SUPPORTED_UNREAD_ALERT_CATEGORY = 0x2A48
+    BLOOD_PRESSURE_FEATURE = 0x2A49
+    HID_INFORMATION = 0x2A4A
+    REPORT_MAP = 0x2A4B
+    HID_CONTROL_POINT = 0x2A4C
+    REPORT = 0x2A4D
+    PROTOCOL_MODE = 0x2A4E
+    SCAN_INTERVAL_WINDOW = 0x2A4F
+    PNP_ID = 0x2A50
+    GLUCOSE_FEATURE = 0x2A51
+    RECORD_ACCESS_CONTROL_POINT = 0x2A52
+    RSC_MEASUREMENT = 0x2A53
+    RSC_FEATURE = 0x2A54
+    SC_CONTROL_POINT = 0x2A55
+    AGGREGATE = 0x2A5A
+    CSC_MEASUREMENT = 0x2A5B
+    CSC_FEATURE = 0x2A5C
+    SENSOR_LOCATION = 0x2A5D
+    PLX_SPOT_CHECK_MEASUREMENT = 0x2A5E
+    PLX_CONTINUOUS_MEASUREMENT = 0x2A5F
+    PLX_FEATURES = 0x2A60
+    CYCLING_POWER_MEASUREMENT = 0x2A63
+    CYCLING_POWER_VECTOR = 0x2A64
+    CYCLING_POWER_FEATURE = 0x2A65
+    CYCLING_POWER_CONTROL_POINT = 0x2A66
+    LOCATION_AND_SPEED = 0x2A67
+    NAVIGATION = 0x2A68
+    POSITION_QUALITY = 0x2A69
+    LN_FEATURE = 0x2A6A
+    LN_CONTROL_POINT = 0x2A6B
+    ELEVATION = 0x2A6C
+    PRESSURE = 0x2A6D
+    TEMPERATURE = 0x2A6E
+    HUMIDITY = 0x2A6F
+    TRUE_WIND_SPEED = 0x2A70
+    TRUE_WIND_DIRECTION = 0x2A71
+    APPARENT_WIND_SPEED = 0x2A72
+    APPARENT_WIND_DIRECTION = 0x2A73
+    GUST_FACTOR = 0x2A74
+    POLLEN_CONCENTRATION = 0x2A75
+    UV_INDEX = 0x2A76
+    IRRADIANCE = 0x2A77
+    RAINFALL = 0x2A78
+    WIND_CHILL = 0x2A79
+    HEAT_INDEX = 0x2A7A
+    DEW_POINT = 0x2A7B
+    DESCRIPTOR_VALUE_CHANGED = 0x2A7D
+    AEROBIC_HEART_RATE_LOWER_LIMIT = 0x2A7E
+    AEROBIC_THRESHOLD = 0x2A7F
+    AGE = 0x2A80
+    ANAEROBIC_HEART_RATE_LOWER_LIMIT = 0x2A81
+    ANAEROBIC_HEART_RATE_UPPER_LIMIT = 0x2A82
+    ANAEROBIC_THRESHOLD = 0x2A83
+    AEROBIC_HEART_RATE_UPPER_LIMIT = 0x2A84
+    DATE_OF_BIRTH = 0x2A85
+    DATE_OF_THRESHOLD_ASSESSMENT = 0x2A86
+    EMAIL_ADDRESS = 0x2A87
+    FAT_BURN_HEART_RATE_LOWER_LIMIT = 0x2A88
+    FAT_BURN_HEART_RATE_UPPER_LIMIT = 0x2A89
+    FIRST_NAME = 0x2A8A
+    FIVE_ZONE_HEART_RATE_LIMITS = 0x2A8B
+    GENDER = 0x2A8C
+    HEART_RATE_MAX = 0x2A8D
+    HEIGHT = 0x2A8E
+    HIP_CIRCUMFERENCE = 0x2A8F
+    LAST_NAME = 0x2A90
+    MAXIMUM_RECOMMENDED_HEART_RATE = 0x2A91
+    RESTING_HEART_RATE = 0x2A92
+    SPORT_TYPE_FOR_AEROBIC_AND_ANAEROBIC_THRESHOLDS = 0x2A93
+    THREE_ZONE_HEART_RATE_LIMITS = 0x2A94
+    TWO_ZONE_HEART_RATE_LIMITS = 0x2A95
+    VO2_MAX = 0x2A96
+    WAIST_CIRCUMFERENCE = 0x2A97
+    WEIGHT = 0x2A98
+    DATABASE_CHANGE_INCREMENT = 0x2A99
+    USER_INDEX = 0x2A9A
+    BODY_COMPOSITION_FEATURE = 0x2A9B
+    BODY_COMPOSITION_MEASUREMENT = 0x2A9C
+    WEIGHT_MEASUREMENT = 0x2A9D
+    WEIGHT_SCALE_FEATURE = 0x2A9E
+    USER_CONTROL_POINT = 0x2A9F
+    MAGNETIC_FLUX_DENSITY___2D = 0x2AA0
+    MAGNETIC_FLUX_DENSITY___3D = 0x2AA1
+    LANGUAGE = 0x2AA2
+    BAROMETRIC_PRESSURE_TREND = 0x2AA3
+    BOND_MANAGEMENT_CONTROL_POINT = 0x2AA4
+    BOND_MANAGEMENT_FEATURE = 0x2AA5
+    CENTRAL_ADDRESS_RESOLUTION = 0x2AA6
+    CGM_MEASUREMENT = 0x2AA7
+    CGM_FEATURE = 0x2AA8
+    CGM_STATUS = 0x2AA9
+    CGM_SESSION_START_TIME = 0x2AAA
+    CGM_SESSION_RUN_TIME = 0x2AAB
+    CGM_SPECIFIC_OPS_CONTROL_POINT = 0x2AAC
+    INDOOR_POSITIONING_CONFIGURATION = 0x2AAD
+    LATITUDE = 0x2AAE
+    LONGITUDE = 0x2AAF
+    LOCAL_NORTH_COORDINATE = 0x2AB0
+    LOCAL_EAST_COORDINATE = 0x2AB1
+    FLOOR_NUMBER = 0x2AB2
+    ALTITUDE = 0x2AB3
+    UNCERTAINTY = 0x2AB4
+    LOCATION_NAME = 0x2AB5
+    URI = 0x2AB6
+    HTTP_HEADERS = 0x2AB7
+    HTTP_STATUS_CODE = 0x2AB8
+    HTTP_ENTITY_BODY = 0x2AB9
+    HTTP_CONTROL_POINT = 0x2ABA
+    HTTPS_SECURITY = 0x2ABB
+    TDS_CONTROL_POINT = 0x2ABC
+    OTS_FEATURE = 0x2ABD
+    OBJECT_NAME = 0x2ABE
+    OBJECT_TYPE = 0x2ABF
+    OBJECT_SIZE = 0x2AC0
+    OBJECT_FIRST_CREATED = 0x2AC1
+    OBJECT_LAST_MODIFIED = 0x2AC2
+    OBJECT_ID = 0x2AC3
+    OBJECT_PROPERTIES = 0x2AC4
+    OBJECT_ACTION_CONTROL_POINT = 0x2AC5
+    OBJECT_LIST_CONTROL_POINT = 0x2AC6
+    OBJECT_LIST_FILTER = 0x2AC7
+    OBJECT_CHANGED = 0x2AC8
+    RESOLVABLE_PRIVATE_ADDRESS_ONLY = 0x2AC9
+    FITNESS_MACHINE_FEATURE = 0x2ACC
+    TREADMILL_DATA = 0x2ACD
+    CROSS_TRAINER_DATA = 0x2ACE
+    STEP_CLIMBER_DATA = 0x2ACF
+    STAIR_CLIMBER_DATA = 0x2AD0
+    ROWER_DATA = 0x2AD1
+    INDOOR_BIKE_DATA = 0x2AD2
+    TRAINING_STATUS = 0x2AD3
+    SUPPORTED_SPEED_RANGE = 0x2AD4
+    SUPPORTED_INCLINATION_RANGE = 0x2AD5
+    SUPPORTED_RESISTANCE_LEVEL_RANGE = 0x2AD6
+    SUPPORTED_HEART_RATE_RANGE = 0x2AD7
+    SUPPORTED_POWER_RANGE = 0x2AD8
+    FITNESS_MACHINE_CONTROL_POINT = 0x2AD9
+    FITNESS_MACHINE_STATUS = 0x2ADA
+    MESH_PROVISIONING_DATA_IN = 0x2ADB
+    MESH_PROVISIONING_DATA_OUT = 0x2ADC
+    MESH_PROXY_DATA_IN = 0x2ADD
+    MESH_PROXY_DATA_OUT = 0x2ADE
+    AVERAGE_CURRENT = 0x2AE0
+    AVERAGE_VOLTAGE = 0x2AE1
+    BOOLEAN = 0x2AE2
+    CHROMATIC_DISTANCE_FROM_PLANCKIAN = 0x2AE3
+    CHROMATICITY_COORDINATES = 0x2AE4
+    CHROMATICITY_IN_CCT_AND_DUV_VALUES = 0x2AE5
+    CHROMATICITY_TOLERANCE = 0x2AE6
+    CIE_13_3_1995_COLOR_RENDERING_INDEX = 0x2AE7
+    COEFFICIENT = 0x2AE8
+    CORRELATED_COLOR_TEMPERATURE = 0x2AE9
+    COUNT_16 = 0x2AEA
+    COUNT_24 = 0x2AEB
+    COUNTRY_CODE = 0x2AEC
+    DATE_UTC = 0x2AED
+    ELECTRIC_CURRENT = 0x2AEE
+    ELECTRIC_CURRENT_RANGE = 0x2AEF
+    ELECTRIC_CURRENT_SPECIFICATION = 0x2AF0
+    ELECTRIC_CURRENT_STATISTICS = 0x2AF1
+    ENERGY = 0x2AF2
+    ENERGY_IN_A_PERIOD_OF_DAY = 0x2AF3
+    EVENT_STATISTICS = 0x2AF4
+    FIXED_STRING_16 = 0x2AF5
+    FIXED_STRING_24 = 0x2AF6
+    FIXED_STRING_36 = 0x2AF7
+    FIXED_STRING_8 = 0x2AF8
+    GENERIC_LEVEL = 0x2AF9
+    GLOBAL_TRADE_ITEM_NUMBER = 0x2AFA
+    ILLUMINANCE = 0x2AFB
+    LUMINOUS_EFFICACY = 0x2AFC
+    LUMINOUS_ENERGY = 0x2AFD
+    LUMINOUS_EXPOSURE = 0x2AFE
+    LUMINOUS_FLUX = 0x2AFF
+    LUMINOUS_FLUX_RANGE = 0x2B00
+    LUMINOUS_INTENSITY = 0x2B01
+    MASS_FLOW = 0x2B02
+    PERCEIVED_LIGHTNESS = 0x2B03
+    PERCENTAGE_8 = 0x2B04
+    POWER = 0x2B05
+    POWER_SPECIFICATION = 0x2B06
+    RELATIVE_RUNTIME_IN_A_CURRENT_RANGE = 0x2B07
+    RELATIVE_RUNTIME_IN_A_GENERIC_LEVEL_RANGE = 0x2B08
+    RELATIVE_VALUE_IN_A_VOLTAGE_RANGE = 0x2B09
+    RELATIVE_VALUE_IN_AN_ILLUMINANCE_RANGE = 0x2B0A
+    RELATIVE_VALUE_IN_A_PERIOD_OF_DAY = 0x2B0B
+    RELATIVE_VALUE_IN_A_TEMPERATURE_RANGE = 0x2B0C
+    TEMPERATURE_8 = 0x2B0D
+    TEMPERATURE_8_IN_A_PERIOD_OF_DAY = 0x2B0E
+    TEMPERATURE_8_STATISTICS = 0x2B0F
+    TEMPERATURE_RANGE = 0x2B10
+    TEMPERATURE_STATISTICS = 0x2B11
+    TIME_DECIHOUR_8 = 0x2B12
+    TIME_EXPONENTIAL_8 = 0x2B13
+    TIME_HOUR_24 = 0x2B14
+    TIME_MILLISECOND_24 = 0x2B15
+    TIME_SECOND_16 = 0x2B16
+    TIME_SECOND_8 = 0x2B17
+    VOLTAGE = 0x2B18
+    VOLTAGE_SPECIFICATION = 0x2B19
+    VOLTAGE_STATISTICS = 0x2B1A
+    VOLUME_FLOW = 0x2B1B
+    CHROMATICITY_COORDINATE = 0x2B1C
+    RC_FEATURE = 0x2B1D
+    RC_SETTINGS = 0x2B1E
+    RECONNECTION_CONFIGURATION_CONTROL_POINT = 0x2B1F
+    IDD_STATUS_CHANGED = 0x2B20
+    IDD_STATUS = 0x2B21
+    IDD_ANNUNCIATION_STATUS = 0x2B22
+    IDD_FEATURES = 0x2B23
+    IDD_STATUS_READER_CONTROL_POINT = 0x2B24
+    IDD_COMMAND_CONTROL_POINT = 0x2B25
+    IDD_COMMAND_DATA = 0x2B26
+    IDD_RECORD_ACCESS_CONTROL_POINT = 0x2B27
+    IDD_HISTORY_DATA = 0x2B28
+    CLIENT_SUPPORTED_FEATURES = 0x2B29
+    DATABASE_HASH = 0x2B2A
+    BSS_CONTROL_POINT = 0x2B2B
+    BSS_RESPONSE = 0x2B2C
+    EMERGENCY_ID = 0x2B2D
+    EMERGENCY_TEXT = 0x2B2E
+    ACS_STATUS = 0x2B2F
+    ACS_DATA_IN = 0x2B30
+    ACS_DATA_OUT_NOTIFY = 0x2B31
+    ACS_DATA_OUT_INDICATE = 0x2B32
+    ACS_CONTROL_POINT = 0x2B33
+    ENHANCED_BLOOD_PRESSURE_MEASUREMENT = 0x2B34
+    ENHANCED_INTERMEDIATE_CUFF_PRESSURE = 0x2B35
+    BLOOD_PRESSURE_RECORD = 0x2B36
+    REGISTERED_USER = 0x2B37
+    BR_EDR_HANDOVER_DATA = 0x2B38
+    BLUETOOTH_SIG_DATA = 0x2B39
+    SERVER_SUPPORTED_FEATURES = 0x2B3A
+    PHYSICAL_ACTIVITY_MONITOR_FEATURES = 0x2B3B
+    GENERAL_ACTIVITY_INSTANTANEOUS_DATA = 0x2B3C
+    GENERAL_ACTIVITY_SUMMARY_DATA = 0x2B3D
+    CARDIORESPIRATORY_ACTIVITY_INSTANTANEOUS_DATA = 0x2B3E
+    CARDIORESPIRATORY_ACTIVITY_SUMMARY_DATA = 0x2B3F
+    STEP_COUNTER_ACTIVITY_SUMMARY_DATA = 0x2B40
+    SLEEP_ACTIVITY_INSTANTANEOUS_DATA = 0x2B41
+    SLEEP_ACTIVITY_SUMMARY_DATA = 0x2B42
+    PHYSICAL_ACTIVITY_MONITOR_CONTROL_POINT = 0x2B43
+    PHYSICAL_ACTIVITY_CURRENT_SESSION = 0x2B44
+    PHYSICAL_ACTIVITY_SESSION_DESCRIPTOR = 0x2B45
+    PREFERRED_UNITS = 0x2B46
+    HIGH_RESOLUTION_HEIGHT = 0x2B47
+    MIDDLE_NAME = 0x2B48
+    STRIDE_LENGTH = 0x2B49
+    HANDEDNESS = 0x2B4A
+    DEVICE_WEARING_POSITION = 0x2B4B
+    FOUR_ZONE_HEART_RATE_LIMITS = 0x2B4C
+    HIGH_INTENSITY_EXERCISE_THRESHOLD = 0x2B4D
+    ACTIVITY_GOAL = 0x2B4E
+    SEDENTARY_INTERVAL_NOTIFICATION = 0x2B4F
+    CALORIC_INTAKE = 0x2B50
+    TMAP_ROLE = 0x2B51
+    AUDIO_INPUT_STATE = 0x2B77
+    GAIN_SETTINGS_ATTRIBUTE = 0x2B78
+    AUDIO_INPUT_TYPE = 0x2B79
+    AUDIO_INPUT_STATUS = 0x2B7A
+    AUDIO_INPUT_CONTROL_POINT = 0x2B7B
+    AUDIO_INPUT_DESCRIPTION = 0x2B7C
+    VOLUME_STATE = 0x2B7D
+    VOLUME_CONTROL_POINT = 0x2B7E
+    VOLUME_FLAGS = 0x2B7F
+    VOLUME_OFFSET_STATE = 0x2B80
+    AUDIO_LOCATION = 0x2B81
+    VOLUME_OFFSET_CONTROL_POINT = 0x2B82
+    AUDIO_OUTPUT_DESCRIPTION = 0x2B83
+    SET_IDENTITY_RESOLVING_KEY = 0x2B84
+    COORDINATED_SET_SIZE = 0x2B85
+    SET_MEMBER_LOCK = 0x2B86
+    SET_MEMBER_RANK = 0x2B87
+    ENCRYPTED_DATA_KEY_MATERIAL = 0x2B88
+    APPARENT_ENERGY_32 = 0x2B89
+    APPARENT_POWER = 0x2B8A
+    LIVE_HEALTH_OBSERVATIONS = 0x2B8B
+    CO2_CONCENTRATION = 0x2B8C
+    COSINE_OF_THE_ANGLE = 0x2B8D
+    DEVICE_TIME_FEATURE = 0x2B8E
+    DEVICE_TIME_PARAMETERS = 0x2B8F
+    DEVICE_TIME = 0x2B90
+    DEVICE_TIME_CONTROL_POINT = 0x2B91
+    TIME_CHANGE_LOG_DATA = 0x2B92
+    MEDIA_PLAYER_NAME = 0x2B93
+    MEDIA_PLAYER_ICON_OBJECT_ID = 0x2B94
+    MEDIA_PLAYER_ICON_URL = 0x2B95
+    TRACK_CHANGED = 0x2B96
+    TRACK_TITLE = 0x2B97
+    TRACK_DURATION = 0x2B98
+    TRACK_POSITION = 0x2B99
+    PLAYBACK_SPEED = 0x2B9A
+    SEEKING_SPEED = 0x2B9B
+    CURRENT_TRACK_SEGMENTS_OBJECT_ID = 0x2B9C
+    CURRENT_TRACK_OBJECT_ID = 0x2B9D
+    NEXT_TRACK_OBJECT_ID = 0x2B9E
+    PARENT_GROUP_OBJECT_ID = 0x2B9F
+    CURRENT_GROUP_OBJECT_ID = 0x2BA0
+    PLAYING_ORDER = 0x2BA1
+    PLAYING_ORDERS_SUPPORTED = 0x2BA2
+    MEDIA_STATE = 0x2BA3
+    MEDIA_CONTROL_POINT = 0x2BA4
+    MEDIA_CONTROL_POINT_OPCODES_SUPPORTED = 0x2BA5
+    SEARCH_RESULTS_OBJECT_ID = 0x2BA6
+    SEARCH_CONTROL_POINT = 0x2BA7
+    ENERGY_32 = 0x2BA8
+    MEDIA_PLAYER_ICON_OBJECT_TYPE = 0x2BA9
+    TRACK_SEGMENTS_OBJECT_TYPE = 0x2BAA
+    TRACK_OBJECT_TYPE = 0x2BAB
+    GROUP_OBJECT_TYPE = 0x2BAC
+    CONSTANT_TONE_EXTENSION_ENABLE = 0x2BAD
+    ADVERTISING_CONSTANT_TONE_EXTENSION_MINIMUM_LENGTH = 0x2BAE
+    ADVERTISING_CONSTANT_TONE_EXTENSION_MINIMUM_TRANSMIT_COUNT = 0x2BAF
+    ADVERTISING_CONSTANT_TONE_EXTENSION_TRANSMIT_DURATION = 0x2BB0
+    ADVERTISING_CONSTANT_TONE_EXTENSION_INTERVAL = 0x2BB1
+    ADVERTISING_CONSTANT_TONE_EXTENSION_PHY = 0x2BB2
+    BEARER_PROVIDER_NAME = 0x2BB3
+    BEARER_UCI = 0x2BB4
+    BEARER_TECHNOLOGY = 0x2BB5
+    BEARER_URI_SCHEMES_SUPPORTED_LIST = 0x2BB6
+    BEARER_SIGNAL_STRENGTH = 0x2BB7
+    BEARER_SIGNAL_STRENGTH_REPORTING_INTERVAL = 0x2BB8
+    BEARER_LIST_CURRENT_CALLS = 0x2BB9
+    CONTENT_CONTROL_ID = 0x2BBA
+    STATUS_FLAGS = 0x2BBB
+    INCOMING_CALL_TARGET_BEARER_URI = 0x2BBC
+    CALL_STATE = 0x2BBD
+    CALL_CONTROL_POINT = 0x2BBE
+    CALL_CONTROL_POINT_OPTIONAL_OPCODES = 0x2BBF
+    TERMINATION_REASON = 0x2BC0
+    INCOMING_CALL = 0x2BC1
+    CALL_FRIENDLY_NAME = 0x2BC2
+    MUTE = 0x2BC3
+    SINK_ASE = 0x2BC4
+    SOURCE_ASE = 0x2BC5
+    ASE_CONTROL_POINT = 0x2BC6
+    BROADCAST_AUDIO_SCAN_CONTROL_POINT = 0x2BC7
+    BROADCAST_RECEIVE_STATE = 0x2BC8
+    SINK_PAC = 0x2BC9
+    SINK_AUDIO_LOCATIONS = 0x2BCA
+    SOURCE_PAC = 0x2BCB
+    SOURCE_AUDIO_LOCATIONS = 0x2BCC
+    AVAILABLE_AUDIO_CONTEXTS = 0x2BCD
+    SUPPORTED_AUDIO_CONTEXTS = 0x2BCE
+    AMMONIA_CONCENTRATION = 0x2BCF
+    CARBON_MONOXIDE_CONCENTRATION = 0x2BD0
+    METHANE_CONCENTRATION = 0x2BD1
+    NITROGEN_DIOXIDE_CONCENTRATION = 0x2BD2
+    NON_METHANE_VOLATILE_ORGANIC_COMPOUNDS_CONCENTRATION = 0x2BD3
+    OZONE_CONCENTRATION = 0x2BD4
+    PARTICULATE_MATTER___PM1_CONCENTRATION = 0x2BD5
+    PARTICULATE_MATTER___PM2_5_CONCENTRATION = 0x2BD6
+    PARTICULATE_MATTER___PM10_CONCENTRATION = 0x2BD7
+    SULFUR_DIOXIDE_CONCENTRATION = 0x2BD8
+    SULFUR_HEXAFLUORIDE_CONCENTRATION = 0x2BD9
+    HEARING_AID_FEATURES = 0x2BDA
+    HEARING_AID_PRESET_CONTROL_POINT = 0x2BDB
+    ACTIVE_PRESET_INDEX = 0x2BDC
+    STORED_HEALTH_OBSERVATIONS = 0x2BDD
+    FIXED_STRING_64 = 0x2BDE
+    HIGH_TEMPERATURE = 0x2BDF
+    HIGH_VOLTAGE = 0x2BE0
+    LIGHT_DISTRIBUTION = 0x2BE1
+    LIGHT_OUTPUT = 0x2BE2
+    LIGHT_SOURCE_TYPE = 0x2BE3
+    NOISE = 0x2BE4
+    RELATIVE_RUNTIME_IN_A_CORRELATED_COLOR_TEMPERATURE_RANGE = 0x2BE5
+    TIME_SECOND_32 = 0x2BE6
+    VOC_CONCENTRATION = 0x2BE7
+    VOLTAGE_FREQUENCY = 0x2BE8
+    BATTERY_CRITICAL_STATUS = 0x2BE9
+    BATTERY_HEALTH_STATUS = 0x2BEA
+    BATTERY_HEALTH_INFORMATION = 0x2BEB
+    BATTERY_INFORMATION = 0x2BEC
+    BATTERY_LEVEL_STATUS = 0x2BED
+    BATTERY_TIME_STATUS = 0x2BEE
+    ESTIMATED_SERVICE_DATE = 0x2BEF
+    BATTERY_ENERGY_STATUS = 0x2BF0
+    OBSERVATION_SCHEDULE_CHANGED = 0x2BF1
+    CURRENT_ELAPSED_TIME = 0x2BF2
+    HEALTH_SENSOR_FEATURES = 0x2BF3
+    GHS_CONTROL_POINT = 0x2BF4
+    LE_GATT_SECURITY_LEVELS = 0x2BF5
+    ESL_ADDRESS = 0x2BF6
+    AP_SYNC_KEY_MATERIAL = 0x2BF7
+    ESL_RESPONSE_KEY_MATERIAL = 0x2BF8
+    ESL_CURRENT_ABSOLUTE_TIME = 0x2BF9
+    ESL_DISPLAY_INFORMATION = 0x2BFA
+    ESL_IMAGE_INFORMATION = 0x2BFB
+    ESL_SENSOR_INFORMATION = 0x2BFC
+    ESL_LED_INFORMATION = 0x2BFD
+    ESL_CONTROL_POINT = 0x2BFE
+    UDI_FOR_MEDICAL_DEVICES = 0x2BFF
+    GMAP_ROLE = 0x2C00
+    UGG_FEATURES = 0x2C01
+    UGT_FEATURES = 0x2C02
+    BGS_FEATURES = 0x2C03
+    BGR_FEATURES = 0x2C04
+# end class BleUuidStandardCharacteristicAndObjectType
+
+
+class GoogleFastPairCharacteristic:
+    """
+    Characteristics uuid for google's fast pair service
+    source: https://spaces.logitech.com/x/gwAnDQ
+    """
+    FAST_PAIR_CHAR_BASE = [0xFE, 0x2C, 0x12, 0x00, 0x83, 0x66, 0x48, 0x14, 0x8E, 0xB0, 0x01, 0xDE, 0x32, 0x10, 0x0B, 0xEA]
+    MODEL_ID = FAST_PAIR_CHAR_BASE[:3] + [0x33] + FAST_PAIR_CHAR_BASE[4:]
+    KEY_BASED_PAIRING = FAST_PAIR_CHAR_BASE[:3] + [0x34] + FAST_PAIR_CHAR_BASE[4:]
+    PASSKEY = FAST_PAIR_CHAR_BASE[:3] + [0x35] + FAST_PAIR_CHAR_BASE[4:]
+    ACCOUNT_KEY = FAST_PAIR_CHAR_BASE[:3] + [0x36] + FAST_PAIR_CHAR_BASE[4:]
+    ADITIONAL_DATA = FAST_PAIR_CHAR_BASE[:3] + [0x37] + FAST_PAIR_CHAR_BASE[4:]
+# end class GoogleFastPairCharacteristic
+
+
+class ManufacturerDataCompanyId(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration (incomplete) of the standard manufacturer IDs from Bluetooth SIG
+
+    Source: https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers/
+    """
+    MICROSOFT = 0x0006
+    APPLE_INC = 0x004C
+    GOOGLE = 0x00E0
+    AMAZON_SERVICES = 0x0171
+    LINUX_FOUNDATION = 0x05F1
+    LOGITECH_INTERNATIONAL_SA = 0x01DA
+# end class ManufacturerDataCompanyId
+
+
+class ManufacturerDataName(Enum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration (incomplete) of the standard manufacturer names from Bluetooth SIG
+
+    Source: https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers/
+    """
+    MICROSOFT = "Microsoft"
+    APPLE_INC = "Apple"
+    GOOGLE = "Google"
+    AMAZON_SERVICES = "Amazon.com Services, LLC"
+    LINUX_FOUNDATION = "The Linux Foundation"
+    LOGITECH_INTERNATIONAL_SA = "Logitech International SA"
+# end class ManufacturerDataName
+
+
+class BleAdvertisingHciEventType(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the standard advertising HCI event types
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.3 Vol 4, Part E, 7.7.65.2 LE Advertising Report event
+    """
+    CONNECTABLE_UNDIRECTED = 0x00
+    CONNECTABLE_DIRECTED = 0x01
+    SCANNABLE_UNDIRECTED = 0x02
+    NON_CONNECTABLE_UNDIRECTED = 0x03
+    SCAN_RSP = 0x04
+# end class BleAdvertisingHciEventType
+
+
+class BleAdvertisingPduType(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration (incomplete, only legacy) of the standard advertising PDU types
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.3 Vol 6, Part B, 2.3 ADVERTISING PHYSICAL CHANNEL PDU
+    """
+    CONNECTABLE_UNDIRECTED = 0x00
+    CONNECTABLE_DIRECTED = 0x01
+    NON_CONNECTABLE_UNDIRECTED = 0x02
+    SCAN_RSP = 0x04
+    SCANNABLE_UNDIRECTED = 0x06
+# end class BleAdvertisingPduType
+
+
+class BleAdvertisingDataType(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the standard values for advertising data type
+
+    Source:
+    Reverse engineering of pytransport.ble.pcbledriverpycontext.pc_ble_driver_py.ble_driver_constants.BLEAdvDataTypes
+    and https://spaces.logitech.com/x/gwAnDQ
+    """
+    FLAGS = 0x01
+    SERVICE_16BIT_UUID_MORE_AVAILABLE = 0x02
+    SERVICE_16BIT_UUID_COMPLETE = 0x03
+    SERVICE_32BIT_UUID_MORE_AVAILABLE = 0x04
+    SERVICE_32BIT_UUID_COMPLETE = 0x05
+    SERVICE_128BIT_UUID_MORE_AVAILABLE = 0x06
+    SERVICE_128BIT_UUID_COMPLETE = 0x07
+    SHORT_LOCAL_NAME = 0x08
+    COMPLETE_LOCAL_NAME = 0x09
+    TX_POWER_LEVEL = 0x0A
+    CLASS_OF_DEVICE = 0x0D
+    SIMPLE_PAIRING_HASH_C = 0x0E
+    SIMPLE_PAIRING_RANDOMIZER_R = 0x0F
+    SECURITY_MANAGER_TK_VALUE = 0x10
+    SECURITY_MANAGER_OOB_FLAGS = 0x11
+    SLAVE_CONNECTION_INTERVAL_RANGE = 0x12
+    SOLICITED_SERVICE_UUIDS_16BIT = 0x14
+    SOLICITED_SERVICE_UUIDS_128BIT = 0x15
+    SERVICE_DATA = 0x16
+    PUBLIC_TARGET_ADDRESS = 0x17
+    RANDOM_TARGET_ADDRESS = 0x18
+    APPEARANCE = 0x19
+    ADVERTISING_INTERVAL = 0x1A
+    LE_BLUETOOTH_DEVICE_ADDRESS = 0x1B
+    LE_ROLE = 0x1C
+    SIMPLE_PAIRING_HASH_C256 = 0x1D
+    SIMPLE_PAIRING_RANDOMIZER_R256 = 0x1E
+    SERVICE_DATA_32BIT_UUID = 0x20
+    SERVICE_DATA_128BIT_UUID = 0x21
+    LESC_CONFIRMATION_VALUE = 0x22
+    LESC_RANDOM_VALUE = 0x23
+    URI = 0x24
+    INFORMATION_3D_DATA = 0x3D
+    MANUFACTURER_SPECIFIC_DATA = 0xFF
+# end class BleAdvertisingDataType
+
+
+class BleAdvertisingFlagBitIndex(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the standard values for advertising flag bit index
+
+    Source:
+    BLUETOOTH CORE SUPPLEMENT SPECIFICATION Version 9, Part A, 1.3 FLAGS
+    """
+    LE_LIMITED_DISC_MODE = 0
+    LE_GENERAL_DISC_MODE = 1
+    BR_EDR_NOT_SUPPORTED = 2
+    LE_BR_EDR_CONTROLLER = 3
+    LE_BR_EDR_HOST = 4
+# end class BleAdvertisingFlagBitIndex
+
+
+class BleAdvertisementFlags(IntEnum):
+    """
+    Flags for ble advertisement
+
+    Source:
+    https://spaces.logitech.com/x/gwAnDQ 2.3.2 Flags
+    """
+    NON_DISCOVERABLE = 0x04
+    LIMITED_DISCOVERABLE = 0x05
+    GENERAL_DISCOVERABLE = 0x06
+# end class BleAdvertisementFlags
+
+
+class BleAdvertisingAppearance(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the standard values for advertising appearance values.
+
+    WARNING: Not all of them are listed, only the needed ones. Use the source to add any new needed value
+
+    Source:
+    https://specificationrefs.bluetooth.com/assigned-values/Appearance%20Values.pdf
+    """
+    GENERIC_HUMAN_INTERFACE_DEVICE = 0x03C0
+    KEYBOARD = 0x03C1
+    MOUSE = 0x03C2
+    GENERIC_CONTROL_DEVICE = 0x04C0  # This one has been added as it is the one Logitech uses for its touchpads
+    DIAL = 0x04C0
+# end class BleAdvertisingAppearance
+
+
+BLE_GAP_ADDRESS_TYPE_MAP = {
+    "PUBLIC": 0x00,
+    "RANDOM_STATIC": 0x01,
+    "RANDOM_PRIVATE_RESOLVABLE": 0x02,
+    "RANDOM_PRIVATE_NON_RESOLVABLE": 0x03,
+    "UNKNOWN": 0xFF,
+}
+
+# Add all RFU values
+for i in range(0x04, 0xFF):
+    BLE_GAP_ADDRESS_TYPE_MAP[f"RFU_{i}"] = i
+# end for
+
+BleGapAddressType = _ForLoopMapIntEnumBuilder("BleGapAddressType", names=BLE_GAP_ADDRESS_TYPE_MAP)
+BleGapAddressType.__doc__ = \
+    """
+    Enumeration of the type of BLE GAP addresses.
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.3 Vol 4, Part E, 7.7.65.2 LE Advertising Report event
+    """
+
+
+class BleMessageSize(IntEnum):
+    """
+    Byte size of various BLE messages and characteristics
+    """
+    APPEARANCE_SIZE = 2
+    BLEPP_MESSAGE_SIZE = 18
+# end class BleMessageSize
+
+
+class BlePnPIdVendorSrc(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Vendor ID Source field values
+    """
+    BLUETOOTH_SIG = 0x01
+    USB_IMPL_FORUM = 0x02
+# end class BlePnPIdVendorSrc
+
+
+class BleChromePNPID(IntEnum):
+    """
+    Chrome os PNP_ID values
+    """
+    PRODUCT_ID = 0xC405
+    FW_BUILD = 0x55
+# end class BleChromePNPID
+
+
+class BleMacBookDis(Enum):
+    SERIAL_NUMBER = "dummy serial number"
+    HARDWARE_REVISION_STRING = "dummy hardware revision"
+    FIRMWARE_REVISION_STRING = "dummy firmware revision"
+    SOFTWARE_REVISION_STRING = "dummy software revision"
+    SYSTEM_ID = "0000000000000000"
+    IEEE_REGULATORY_CERT_DATA_LIST = "000000000000000000000000"
+# end class BleMacBookDis
+
+
+class BleAppearance(IntEnum):
+    """
+    Appearance values for device in ble
+
+    Source: https://spaces.logitech.com/x/6R9HCQ
+    """
+    UNKNOWN = 0x0000
+    KEYBOARD = 0x03C1
+    MOUSE = 0x03C2
+    PRESENTER = 0x03C0
+    TRACK_BALL = 0x03C2
+    TOUCH_PAD = 0x04C0
+    DIAL = 0x04C0
+# end class BleAppearance
+
+
+class BleScanType(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the valid values for the BLE scan type.
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.3 Vol 4 Part E Section 7.8.10, page 2364 in parameter
+    LE_Scan_Type table
+    """
+    PASSIVE_SCANNING = 0x00
+    ACTIVE_SCANNING = 0x01
+# end class BleScanType
+
+
+class BleScanIntervalWindowRange(float, Enum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the valid values range bound values for the BLE scan interval and window.
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.3 Vol 4 Part E Section 7.8.10, page 2365 in parameter
+    LE_Scan_Interval and LE_Scan_Window tables
+    """
+    INTERVAL_WINDOW_MIN = 0x0004 * BleGenericFloatConstant.SCAN_INTERVAL_WINDOWS_GRANULARITY
+    INTERVAL_WINDOW_MAX = 0x4000 * BleGenericFloatConstant.SCAN_INTERVAL_WINDOWS_GRANULARITY
+# end class BleScanIntervalWindowRange
+
+
+class BleScanOwnAddressType(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the valid values for the BLE own address type in the scan parameters.
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.3 Vol 4 Part E Section 7.8.10, page 2365 in parameter
+    Own_Address_Type table
+    """
+    PUBLIC_DEVICE_ADDRESS = 0x00
+    RANDOM_DEVICE_ADDRESS = 0x01
+    RPA_PUBLIC_DEVICE_ADDRESS = 0x02
+    RPA_RANDOM_DEVICE_ADDRESS = 0x03
+# end class BleScanOwnAddressType
+
+
+class BleScanningFilterPolicy(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the valid values for the BLE scanning filter policy.
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.3 Vol 4 Part E Section 7.8.10, page 2365 in parameter
+    Scanning_Filter_Policy table
+    """
+    BASIC_UNFILTERED = 0x00
+    BASIC_FILTERED = 0x01
+    EXTENDED_UNFILTERED = 0x02
+    EXTENDED_FILTERED = 0x03
+# end class BleScanningFilterPolicy
+
+
+class BleControllerErrorCodes(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of the standard error codes for bluetooth commands
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.4 Vol 1, Part F, 1.3. List of error codes
+
+    """
+    SUCCESS = 0x00
+    UNKNOWN_HCI_COMMAND = 0x01
+    UNKNOWN_CONNECTION_IDENTIFIER = 0x02
+    HARDWARE_FAILURE = 0x03
+    PAGE_TIMEOUT = 0x04
+    AUTHENTICATION_FAILURE = 0x05
+    PIN_OR_KEY_MISSING = 0x06
+    MEMORY_CAPACITY_EXCEEDED = 0x07
+    CONNECTION_TIMEOUT = 0x08
+    CONNECTION_LIMIT_EXCEEDED = 0x09
+    SYNCHRONOUS_CONNECTION_LIMIT_TO_A_DEVICE_EXCEEDED = 0x0A
+    CONNECTION_ALREADY_EXISTS = 0x0B
+    COMMAND_DISALLOWED = 0x0C
+    CONNECTION_REJECTED_DUE_TO_LIMITED_RESOURCES = 0x0D
+    CONNECTION_REJECTED_DUE_TO_SECURITY_REASONS = 0x0E
+    CONNECTION_REJECTED_DUE_TO_UNACCEPTABLE_BD_ADDR = 0x0F
+    CONNECTION_ACCEPT_TIMEOUT_EXCEEDED = 0x10
+    UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE = 0x11
+    INVALID_HCI_COMMAND_PARAMETERS = 0x12
+    REMOTE_USER_TERMINATED_CONNECTION = 0x13
+    REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_LOW_RESOURCES = 0x14
+    REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_POWER_OFF = 0x15
+    CONNECTION_TERMINATED_BY_LOCAL_HOST = 0x16
+    REPEATED_ATTEMPTS = 0x17
+    PAIRING_NOT_ALLOWED = 0x18
+    UNKNOWN_LMP_PDU = 0x19
+    UNSUPPORTED_REMOTE_FEATURE = 0x1A
+    SCO_OFFSET_REJECTED = 0x1B
+    SCO_INTERVAL_REJECTED = 0x1C
+    SCO_AIR_MODE_REJECTED = 0x1D
+    INVALID_LMP_PARAMETERS__INVALID_LL_PARAMETERS = 0x1E
+    UNSPECIFIED_ERROR = 0x1F
+    UNSUPPORTED_LMP_PARAMETER_VALUE__UNSUPPORTED_LL_PARAMETER_VALUE = 0x20
+    ROLE_CHANGE_NOT_ALLOWED = 0x21
+    LMP_RESPONSE_TIMEOUT__LL_RESPONSE_TIMEOUT = 0x22
+    LMP_ERROR_TRANSACTION_COLLISION__LL_PROCEDURE_COLLISION = 0x23
+    LMP_PDU_NOT_ALLOWED = 0x24
+    ENCRYPTION_MODE_NOT_ACCEPTABLE = 0x25
+    LINK_KEY_CANNOT_BE_CHANGED = 0x26
+    REQUESTED_QOS_NOT_SUPPORTED = 0x27
+    INSTANT_PASSED = 0x28
+    PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED = 0x29
+    DIFFERENT_TRANSACTION_COLLISION = 0x2A
+    RESERVED_FOR_FUTURE_USE_1 = 0x2B
+    QOS_UNACCEPTABLE_PARAMETER = 0x2C
+    QOS_REJECTED = 0x2D
+    CHANNEL_CLASSIFICATION_NOT_SUPPORTED = 0x2E
+    INSUFFICIENT_SECURITY = 0x2F
+    PARAMETER_OUT_OF_MANDATORY_RANGE = 0x30
+    RESERVED_FOR_FUTURE_USE_2 = 0x31
+    ROLE_SWITCH_PENDING = 0x32
+    RESERVED_FOR_FUTURE_USE_3 = 0x33
+    RESERVED_SLOT_VIOLATION = 0x34
+    ROLE_SWITCH_FAILED = 0x35
+    EXTENDED_INQUIRY_RESPONSE_TOO_LARGE = 0x36
+    SECURE_SIMPLE_PAIRING_NOT_SUPPORTED_BY_HOST = 0x37
+    HOST_BUSY__PAIRING = 0x38
+    CONNECTION_REJECTED_DUE_TO_NO_SUITABLE_CHANNEL_FOUND = 0x39
+    CONTROLLER_BUSY = 0x3A
+    UNACCEPTABLE_CONNECTION_PARAMETERS = 0x3B
+    ADVERTISING_TIMEOUT = 0x3C
+    CONNECTION_TERMINATED_DUE_TO_MIC_FAILURE = 0x3D
+    CONNECTION_FAILED_TO_BE_ESTABLISHED__SYNCHRONIZATION_TIMEOUT = 0x3E
+    PREVIOUSLY_USED = 0x3F
+    COARSE_CLOCK_ADJUSTMENT_REJECTED_BUT_WILL_TRY_TO_ADJUST_USING_CLOCK_DRAGGING = 0x40
+    TYPE0_SUBMAP_NOT_DEFINED = 0x41
+    UNKNOWN_ADVERTISING_IDENTIFIER = 0x42
+    LIMIT_REACHED = 0x43
+    OPERATION_CANCELLED_BY_HOST = 0x44
+    PACKET_TOO_LONG = 0x45
+    TOO_LATE = 0x46
+    TOO_EARLY = 0x47
+# end class BleControllerErrorCodes
+
+BLE_PAIRING_FAILED_MAP = {
+    "RFU_00" : 0x00,
+    "PASSKEY_ENTRY_FAILED": 0X01,
+    "OOB_NOT_AVAILABLE": 0x02,
+    "AUTHENTICATION_REQUIREMENTS": 0x03,
+    "CONFIRM_VALUE_FAILED": 0x04,
+    "PAIRING_NOT_SUPPORTED": 0x05,
+    "ENCRYPTION_KEY_SIZE": 0x06,
+    "COMMAND_NOT_SUPPORTED": 0x07,
+    "UNSPECIFIED_REASON": 0x08,
+    "REPEATED_ATTEMPTS": 0x09,
+    "INVALID_PARAMETERS": 0x0A,
+    "DHKEY_CHECK_FAILED": 0x0B,
+    "NUMERIC_COMPARISON_FAILED": 0x0C,
+    "BR_EDR_PAIRING_IN_PROGRESS": 0x0D,
+    "CROSS_TRANSPORT_KEY_DERIVATION_GENERATION_NOT_ALLOWED": 0x0E,
+    "KEY_REJECTED": 0x0F,
+}
+
+# Add all RFU values
+for i in range(0x10, 0xFF):
+    BLE_PAIRING_FAILED_MAP[f"RFU_{i}"] = i
+# end for
+
+BlePairingFailReason = _ForLoopMapIntEnumBuilder("BlePairingFailReason", names=BLE_PAIRING_FAILED_MAP)
+BlePairingFailReason.__doc__ = \
+    """
+    Enumeration of the pairing failure reasons.
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.4 Vol 3, Part H, 3.5.5. Pairing Failed
+    """
+
+class BleSmpKeypress(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Enumeration of valid BLE actions in SMP Keypress Notification
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.4 Vol 4, Part E, 7.7.49. Keypress Notification event
+    """
+    PASSKEY_ENTRY_STARTED = 0
+    PASSKEY_DIGIT_ENTERED = 1
+    PASSKEY_DIGIT_ERASED = 2
+    PASSKEY_CLEARED = 3
+    PASSKEY_ENTRY_COMPLETE = 4
+# end class BleSmpKeypress
+
+class BleCharacteristicPropertiesMask(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Characteristic properties masks.
+
+    Source: BLUETOOTH CORE SPECIFICATION Version 5.3 Vol 3, Part G, 3.3.1.1 Characteristic Properties
+    """
+    BROADCAST = 0x01
+    READ = 0x02
+    WRITE_WITHOUT_RESPONSE = 0x04
+    WRITE = 0x08
+    NOTIFY = 0x10
+    INDICATE = 0x20
+    AUTHENTICATED_SIGNED_WRITES = 0x40
+    EXTENDED_PROPERTIES = 0x80
+# end class BleCharacteristicPropertiesMask
+
+
+class BleContextEventType(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Event types used by the BLE context to give to higher layer.
+    """
+    CONNECTION_EVENT = auto()
+    DISCONNECTION_EVENT = auto()
+    L2CAP_CONNECTION_PARAMETERS_UPDATE_REQUEST = auto()
+    CONNECTION_PARAMETERS_UPDATE_REQUEST_RESULT = auto()
+    CONNECTION_PARAMETERS_UPDATE_COMPLETED = auto()
+    DISPLAY_PASSKEY = auto()
+# end class BleContextEventType
+
+
+class BleContextEventDataType(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Event data types to use as key in the dict used for ``BleContextEvent.event_data``.
+    """
+    CONNECTION_ROLE = auto()
+    DISCONNECTION_REASON = auto()
+    CONNECTION_PARAMETERS_REQUESTED = auto()
+    CONNECTION_PARAMETERS_UPDATE_REQUEST_RESULT = auto()
+    CONNECTION_PARAMETERS_UPDATE_COMPLETED = auto()
+    DISPLAY_PASSKEY_PASSKEY = auto()
+# end class BleContextEventDataType
+
+
+class BleContextConnectionParameterUpdateRequestResult(IntEnum, metaclass=ContainsEnumMeta):
+    """
+    Event data values for ``BleContextEventType.CONNECTION_PARAMETERS_UPDATE_REQUEST_RESULT`` events
+    """
+    REJECTED = auto()
+    ACCEPTED = auto()
+# end class BleContextConnectionParameterUpdateRequestResult
+
+# ------------------------------------------------------------------------------
+# END OF FILE
+# ------------------------------------------------------------------------------

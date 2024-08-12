@@ -1,0 +1,324 @@
+// -------------------------------------
+// Pipeline Configuration Section
+properties([
+    parameters([
+        string(name: 'PROJECT_NAME', defaultValue: 'qbert_ble_pro', description: 'firmware hex file name', ),
+        string(name: 'BRANCH_NAME', defaultValue: 'mpr01_gravity', description: 'project branch name on goldenpass', ),
+        string(name: 'CODE_TAG', defaultValue: 'MPR06.00_B0003', description: 'optional tag on goldenpass', ),
+        string(name: 'CODE_PATCHSET', defaultValue: '', description: 'optional patchset on goldenpass', ),
+        string(name: 'SOC_NAME', defaultValue: 'MESON', description: 'System on a Chip definition', ),
+        string(name: 'TEST_CONFIG', defaultValue: 'MESON/BLE_PRO/QBERT/BUILD_0003',
+            description: 'RECEIVER pyTestBox test configuration', ),
+        string(name: 'SEC_PROJECT_NAME', defaultValue: 'zaha_ble_pro', description: 'firmware hex file name', ),
+        string(name: 'SEC_BRANCH_NAME', defaultValue: 'rbm15_zaha_ble_pro',
+            description: 'device project branch name on goldenpass', ),
+        string(name: 'SEC_CODE_TAG', defaultValue: '', description: 'optional tag on gravity', ),
+        string(name: 'SEC_CODE_PATCHSET', defaultValue: '', description: 'optional patchset on gravity', ),
+        string(name: 'SEC_SOC_NAME', defaultValue: 'QUARK256', description: 'System on a Chip definition', ),
+        string(name: 'ACTION_TYPES_TO_BUILD', defaultValue: '1',
+            description: 'Action types values that will be used for -Dbtldr_ACTION_APP_TYPE to build extra hex files with the wanted action type for feature 0x00C3', ),
+        string(name: 'PYTESTBOX_BRANCH_NAME', defaultValue: '*/develop',
+            description: 'pyTestBox repo branch name', ),
+    ]),
+// End of Pipeline Configuration Section
+// -------------------------------------
+])
+
+timestamps {
+
+    node ('builder') {
+
+        stage ('Build Job - Checkout') {
+            checkout([$class: 'GitSCM',
+                branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false,
+                extensions: [[ $class: 'CleanCheckout'],
+                    [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: false,
+                    recursiveSubmodules: true, reference: '', trackingSubmodules: false
+                ]],
+                submoduleCfg: [],
+                userRemoteConfigs: [[credentialsId: 'Jenkins user',
+                    url: "ssh://Jenkins@goldenpass.logitech.com:29418/ccp_fw/${params.BRANCH_NAME}"
+                ]]
+            ])
+        } // End of stage ('Build Job - Checkout')
+
+        stage ('Build Job - Build') {
+            echo "PROJECT_NAME = ${params.PROJECT_NAME}"
+            if (params.CODE_PATCHSET != '') {
+              // Shell build step - sync on a patchset
+              sh "git fetch ssh://Jenkins@goldenpass.logitech.com:29418/ccp_fw/${params.BRANCH_NAME} refs/changes/${params.CODE_PATCHSET}"
+              sh "git checkout FETCH_HEAD"
+            } else {
+              if (params.CODE_TAG != '') {
+                // Shell build step - sync on a tag
+                sh "git checkout tags/${params.CODE_TAG}"
+              }
+            }
+            sh "git submodule update -i"
+            sh "git clean -x -f"
+            // Shell build step - Build production and test firmwares,
+            //                    valid test dfu and phcs#1 v1.5 verification dfu files
+            // Shell build step - Copy hard-coded Jenkins dfu key into dfu test key
+            sh """
+              cd gcc_eclipse
+              make clean PROJECT=${params.PROJECT_NAME}
+              make clean PROJECT=${params.PROJECT_NAME} OUT_DIR_PFX=build_ci
+              cd ../config
+              cp priv_tstkey_jenkins.pem priv_tstkey.pem
+              cd ../gcc_eclipse
+              make -j8 BUILD_CONFIG=PROD PROJECT=${params.PROJECT_NAME}
+              CPPFLAGS=-DCI_BUILD=1 make -j8 PROJECT=${params.PROJECT_NAME} OUT_DIR_PFX=build_ci
+              CPPFLAGS=-DCI_BUILD=1 make -j8 BUILD_CONFIG=PROD PROJECT=${params.PROJECT_NAME} OUT_DIR_PFX=build_ci dfu_evt
+              for i in ${params.ACTION_TYPES_TO_BUILD}; do
+                  CPPFLAGS="-DCI_BUILD=1 -Dprot_BLEPRO_ENABLED=true -Dbtldr_ACTION_APP_TYPE=\${i} -Dbtldr_ACTION_BTLDR_TYPE=\${i}" make -j8 BUILD_CONFIG=PROD PROJECT=${params.PROJECT_NAME} OUT_DIR_PFX=action_type_\${i}
+                  cd action_type_\${i}_${params.PROJECT_NAME}
+                  hex_value=`printf \'%02X\' \${i}`
+                  mv ${params.PROJECT_NAME}_prod.hex ../build_ci_${params.PROJECT_NAME}/${params.PROJECT_NAME}_prod_action_type_\${hex_value}.hex
+                  cd ..
+              done
+            """
+            // Build and get DFU of first action type of the ACTION_TYPES_TO_BUILD list
+            sh """
+              cd gcc_eclipse
+              make clean PROJECT=${params.PROJECT_NAME} OUT_DIR_PFX=action_type_app_${params.ACTION_TYPES_TO_BUILD[0]}
+              cd ../config
+              cp priv_tstkey_jenkins.pem priv_tstkey.pem
+              cd ../gcc_eclipse
+              CPPFLAGS="-DCI_BUILD=1 -Dprot_BLEPRO_ENABLED=true -Dbtldr_ACTION_APP_TYPE=${params.ACTION_TYPES_TO_BUILD[0]}" make -j8 BUILD_CONFIG=PROD PROJECT=${params.PROJECT_NAME} OUT_DIR_PFX=action_type_app_${params.ACTION_TYPES_TO_BUILD[0]} dfu_evt
+              cd action_type_app_${params.ACTION_TYPES_TO_BUILD[0]}_${params.PROJECT_NAME}
+              mv ${params.PROJECT_NAME}_prod.hex ../build_ci_${params.PROJECT_NAME}/${params.PROJECT_NAME}_prod_action_type_app_${params.ACTION_TYPES_TO_BUILD[0]}.hex
+              cd dfu_evt_prod
+              mv good.dfu ../../build_ci_${params.PROJECT_NAME}/${params.PROJECT_NAME}_prod_action_type_app_${params.ACTION_TYPES_TO_BUILD[0]}.dfu
+              cd ../..
+            """
+            sh(returnStdout: true, script: '''#!/bin/bash
+              if [ ! -z "$(git status --porcelain)" ]; then
+                echo "Uncommitted changes in tracked files"
+                echo "$(git status --porcelain)"
+                exit 1
+              fi
+            '''.stripIndent())
+            archiveArtifacts allowEmptyArchive: false,
+                             artifacts: """**gcc_eclipse/**/*.dfu,
+                                           **gcc_eclipse/build_*/${params.PROJECT_NAME}*.hex,
+                                           **gcc_eclipse/build_ci_*prod/${params.PROJECT_NAME}*.elf,
+                                           **/dfu_*_key.txt,
+                                           **/priv_tstkey_jenkins.pem,
+                                           **gcc_eclipse/build_ci_*prod/*.map""",
+                             caseSensitive: true,
+                             defaultExcludes: true,
+                             fingerprint: false,
+                             onlyIfSuccessful: false
+            // Clean workspace at build end
+            cleanWs()
+        } // End of stage ('Build Job - Build')
+    } // End of node ('builder')
+
+    node ('fw_check') {
+
+        stage ('Firmwares Comparison Job - Checkout') {
+            checkout([$class: 'GitSCM',
+                branches: [[name: "${params.PYTESTBOX_BRANCH_NAME}"]], doGenerateSubmoduleConfigurations: false,
+                extensions: [[$class: 'CleanCheckout']], submoduleCfg: [],
+                userRemoteConfigs: [[credentialsId: 'GithubProductsCIToken', url: "https://github.com/Logitech/py-test-box.git"]]
+            ])
+        } // End of stage ('Firmwares Comparison Job - Checkout')
+
+        stage ('Firmwares Comparison Job - Build') {
+            script {
+                copyArtifacts(
+                    filter: """**gcc_eclipse/build_*/${params.PROJECT_NAME}_prod.hex,
+                               **gcc_eclipse/build_ci_*prod/${params.PROJECT_NAME}*.elf""",
+                    projectName: env.JOB_NAME,
+                    fingerprintArtifacts: true,
+                    selector: specific(env.BUILD_NUMBER),
+                    target: 'PYTESTBOX/TESTS/DFU_FILES'
+                )
+
+                try {
+                    // Shell Unit Test step - framework initialization
+                    sh """
+                      python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py
+                    """
+                    // Shell Unit Test step - production vs test firmwares comparison
+                    def path = 'PYTESTBOX/TESTS/DFU_FILES/gcc_eclipse/build_'
+                    sh """
+                      python3 PYTESTBOX/CICD/ciscripts/compare_hex.py  \
+                          -f ${path}${params.PROJECT_NAME}/${params.PROJECT_NAME}_prod.hex  \
+                          -c ${path}ci_${params.PROJECT_NAME}/${params.PROJECT_NAME}_prod.hex \
+                          -b ${path}ci_${params.PROJECT_NAME}_btldr_prod/${params.PROJECT_NAME}_btldr.elf \
+                          -e ${path}ci_${params.PROJECT_NAME}_app_prod/${params.PROJECT_NAME}_app.elf
+                    """
+                }
+                finally {
+                    try {
+                        // Permission cleanup
+                        sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                    }
+                    catch(all) {
+                        echo 'Error cleaning up permissions'
+                    }
+                }
+            }
+        } // End of stage ('Firmwares Comparison Job - Build')
+    } // End of node ('slave')
+  
+    node ('builder') {
+        stage ('Zaha ble pro Build Job - Checkout') {
+            checkout([$class: 'GitSCM',
+                branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false,
+                extensions: [[ $class: 'CleanCheckout'],
+                    [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: false,
+                    recursiveSubmodules: true, reference: '', trackingSubmodules: false
+                ]],
+                submoduleCfg: [],
+                userRemoteConfigs: [[credentialsId: 'Jenkins user',
+                    url: "ssh://Jenkins@goldenpass.logitech.com:29418/ccp_fw/${params.SEC_BRANCH_NAME}"
+                ]]
+            ])
+        } // End of stage ('Build Job - Checkout')
+
+        stage ('Zaha ble pro Build Job - Build') {
+            echo "PROJECT_NAME = ${params.SEC_PROJECT_NAME}"
+            if (params.SEC_CODE_PATCHSET != '') {
+              // Shell build step - sync on a patchset
+              sh "git fetch ssh://Jenkins@goldenpass.logitech.com:29418/ccp_fw/${params.SEC_BRANCH_NAME} refs/changes/${params.SEC_CODE_PATCHSET}"
+              sh "git checkout FETCH_HEAD"
+            } else {
+              if (params.SEC_CODE_TAG != '') {
+                // Shell build step - sync on a tag
+                sh "git checkout tags/${params.SEC_CODE_TAG}"
+              }
+            }
+            sh "git submodule update -i"
+            sh "git clean -x -f"
+            // Shell build step - Build production and test firmwares,
+            //                    valid test dfu and phcs#1 v1.5 verification dfu files
+            // Shell build step - Copy hard-coded Jenkins dfu key into dfu test key
+            sh """
+              cd gcc_eclipse
+              make clean PROJECT=${params.SEC_PROJECT_NAME} OUT_DIR_PFX=build_ci
+              cd ../config
+              cp priv_tstkey_jenkins.pem priv_tstkey.pem
+              cd ../gcc_eclipse
+              CPPFLAGS=-DCI_BUILD=1 make -j8 PROJECT=${params.SEC_PROJECT_NAME} OUT_DIR_PFX=build_ci dfu_evt
+              cd build_ci_${params.SEC_PROJECT_NAME}/dfu_evt_prod
+              mv good.dfu ${params.SEC_PROJECT_NAME}_prod.dfu
+            """
+            archiveArtifacts allowEmptyArchive: false,
+                             artifacts: """**gcc_eclipse/**/${params.SEC_PROJECT_NAME}_prod.dfu,
+                                           **gcc_eclipse/build_ci_*/${params.SEC_PROJECT_NAME}_prod.hex""",
+                             caseSensitive: true,
+                             defaultExcludes: true,
+                             fingerprint: false,
+                             onlyIfSuccessful: false
+            // Clean workspace at build end
+            cleanWs()
+        } // End of stage ('Build Job - Build')
+    } // End of node ('builder')
+
+    node (label: "${params.PROJECT_NAME} && ${params.SEC_PROJECT_NAME}") {
+        stage ('Test Execution Job - Checkout') {
+            checkout(
+                [$class: 'GitSCM',
+                    branches: [[name: "${params.PYTESTBOX_BRANCH_NAME}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: scm.extensions + [[$class: 'CleanCheckout'],
+                        [$class: 'SubmoduleOption',
+                        disableSubmodules: false,
+                        parentCredentials: true,
+                        recursiveSubmodules: true,
+                        reference: '',
+                        trackingSubmodules: false
+                    ]],
+                    submoduleCfg: [],
+                    userRemoteConfigs: [
+                     [credentialsId: 'GithubProductsCIToken',
+                      url: "https://github.com/Logitech/py-test-box.git"]
+                    ]
+                ]
+            )
+        } // End of stage ('Test Execution Job - Checkout')
+
+        stage ('Test Execution Job - Build') {
+            script {
+                copyArtifacts(
+                    filter: """**gcc_eclipse/**/*.dfu,
+                               **gcc_eclipse/build_ci_*/${params.PROJECT_NAME}_prod.hex,
+                               **gcc_eclipse/build_ci_*/${params.SEC_PROJECT_NAME}_prod.hex,
+                               **/${params.PROJECT_NAME}_app.elf,
+                               **/dfu_${params.PROJECT_NAME}_key.txt,
+                               **/priv_tstkey_jenkins.pem""",
+                    projectName: env.JOB_NAME,
+                    fingerprintArtifacts: true,
+                    selector: specific(env.BUILD_NUMBER),
+                    target: 'PYTESTBOX/TESTS/DFU_FILES',
+                    flatten: true
+                )
+
+                try {
+                      // Shell build step - framework initialization
+                      sh """
+                        python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py
+                      """
+                      // Get Node Name
+                      def node_name = "${NODE_NAME}"
+                      clean_node_name = node_name.replaceAll("\\s","_")
+                      echo "The Node Name is: ${clean_node_name}"
+                      // Shell Integration Test step - voltage calibration
+                      sh """
+                        python3 PYTESTBOX/CICD/ciscripts/power_supply.py -i -g -c -e
+                      """
+                      // Shell Integration Test step - turn on power
+                      sh """
+                        python3 PYTESTBOX/CICD/ciscripts/power_supply.py -i -s True -v 3.8 -o
+                      """
+                      // Product settings path
+                      def settings_path = "PYTESTBOX/TESTS/SETTINGS/PYTESTBOX/RECEIVER"
+                      // Shell Integration Test step - Mezzy firmware code loading
+                      sh """
+                        python3 PYTESTBOX/CICD/ciscripts/jlink.py -v \
+                            -f PYTESTBOX/TESTS/DFU_FILES/${params.PROJECT_NAME}_prod.hex  \
+                            -n ${settings_path}/${params.TEST_CONFIG}/nvs_uicr_${params.PROJECT_NAME}_${clean_node_name}.hex \
+                            -p ${params.SOC_NAME} -t RECEIVER
+                      """
+                      // Shell Integration Test step - Zaha ble pro firmware code loading
+                      sh """
+                        python3 PYTESTBOX/CICD/ciscripts/jlink.py -v \
+                            -f PYTESTBOX/TESTS/DFU_FILES/${params.SEC_PROJECT_NAME}_prod.hex  \
+                            -p ${params.SEC_SOC_NAME}  \
+                            -n ${settings_path}/${params.TEST_CONFIG}/nvs_uicr_${params.SEC_PROJECT_NAME}_${clean_node_name}.hex
+                      """
+                      timeout(time: 60, unit: 'MINUTES', activity: true) {
+                        // Shell Integration Test step - tests execution
+                        sh """
+                          python3 PYTESTBOX/TESTS/main.py  \
+                              --file=PYTESTBOX/TESTS/SETTINGS/testFilter.txt \
+                              --variant=RECEIVER/${params.TEST_CONFIG} \
+                              --product=PYTESTBOX \
+                              --target=DEVICE \
+                              --output=console,log,junit,jrl \
+                              --level=Interface,Business,Functionality,ErrorHandling,Robustness,Security,Time-consuming
+                        """
+                      }
+                      // Shell Integration Test step - power supply GPIO cleanup
+                      sh """
+                        python3 PYTESTBOX/CICD/ciscripts/power_supply.py -e
+                      """
+                }
+                finally {
+                    try {
+                        // Permission cleanup
+                        sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                    }
+                    catch(all) {
+                        echo 'Error cleaning up permissions'
+                    }
+                }
+            }
+          // Save JUnit Results
+          junit "**/LOCAL/**/${params.TEST_CONFIG}/**/*.xml"
+          archiveArtifacts allowEmptyArchive: true, artifacts: "**/LOCAL/**/${params.TEST_CONFIG}/**/log/*.log", caseSensitive: true, defaultExcludes: true, fingerprint: false, onlyIfSuccessful: false
+        } // End of stage ('Test Execution Job - Build')
+    } // End of node (label: "${params.PROJECT_NAME}")
+} // End of timestamps

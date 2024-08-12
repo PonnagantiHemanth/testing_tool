@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?eclipse-pydev version="1.0"?><pydev_project>
+<pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
+<path>/${PROJECT_DIR_NAME}</path>
+</pydev_pathproperty>
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python interpreter</pydev_property>
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">python</pydev_property>
+<pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
+<path>C:\Users\croquebert\Documents\PyTestBox\PYTESTBOX\LIBS\PYHARNESS</path>
+<path>C:\Users\croquebert\Documents\PyTestBox\PYTESTBOX\LIBS\PYLIBRARY</path>
+<path>C:\Users\croquebert\Documents\PyTestBox\PYTESTBOX\LIBS\PYSETUP\PYTHON</path>
+<path>C:\Users\croquebert\Documents\PyTestBox\PYTESTBOX\LIBS\PYUSB</path>
+<path>C:\Users\croquebert\Documents\PyTestBox\PYTESTBOX\LIBS\PYHID</path>
+<path>C:\Users\croquebert\Documents\PyTestBox\PYTESTBOX\TESTS\TESTSUITES</path>
+</pydev_pathproperty>
+</pydev_project>

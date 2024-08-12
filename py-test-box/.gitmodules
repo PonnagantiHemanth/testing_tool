@@ -1,0 +1,9 @@
+[submodule "protocol"]
+	path = PYTESTBOX/LIBS/PYRASPI/pyraspi/services/kosmos/protocol
+	url = https://github.com/Logitech/cpg_kosmos_protocol.git
+[submodule "PYTESTBOX/LIBS/PYTRANSPORT/pytransport/usb/logiusbcontext/logiusb"]
+	path = PYTESTBOX/LIBS/PYTRANSPORT/pytransport/usb/logiusbcontext/logiusb
+	url = https://github.com/Logitech/cpg_custom_usb_layer_wrapper.git
+[submodule "PYTESTBOX/LIBS/PYTRANSPORT/pytransport/ble/nrfblelibblecontext/nrf_ble_lib"]
+	path = PYTESTBOX/LIBS/PYTRANSPORT/pytransport/ble/nrfblelibblecontext/nrf_ble_lib
+	url = https://github.com/Logitech/cpg_nrf_ble_lib.git

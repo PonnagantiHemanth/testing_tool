@@ -1,0 +1,22 @@
+Metadata-Version: 1.1
+Name: PyHarness
+Version: 1.1.2.0
+Summary: pyHarness is a generic testing framework written in Python
+  It is able to address various targets, such as usb boards, devices...
+Author: christophe Roquebert
+Author-email: croquebert@logitech.com
+License: Python Validation Framework
+  pyHarness 2018
+Description: UNKNOWN
+Keywords: test
+Platform: UNKNOWN
+Classifier: Environment :: Console
+Classifier: Environment :: Gui
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: Linux :: Ubuntu
+Classifier: Operating System :: Linux :: Scientific Linux
+Classifier: Operating System :: Apple :: Darwin
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development :: Testing
+Requires: PyLibrary (>= 0.24)

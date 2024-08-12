@@ -1,0 +1,447 @@
+// -------------------------------------
+// Pipeline Configuration Section
+properties([
+    parameters([
+        string(name: 'PROJECT_NAME', defaultValue: 'savituck_ls2', description: 'firmware hex file name', ),
+        string(name: 'BRANCH_NAME', defaultValue: 'mpr01_gravity', description: 'project branch name on goldenpass', ),
+        string(name: 'CODE_TAG', defaultValue: '', description: 'optional tag on goldenpass', ),
+        string(name: 'CODE_PATCHSET', defaultValue: '', description: 'optional patchset on goldenpass', ),
+        string(name: 'SOC_NAME', defaultValue: 'MESON', description: 'System on a Chip definition', ),
+        string(name: 'TEST_CONFIG', defaultValue: 'MESON/LS2_CA/SAVITUCK',
+            description: 'RECEIVER pyTestBox test configuration', ),
+        string(name: 'SETUP_CONFIG', defaultValue: 'MESON/LS2_CA/SAVITUCK/SETUP/GRAVITON/GAMING_PLATFORM',
+            description: 'Setup Configuration', ),
+        string(name: 'SEC_PROJECT_NAME', defaultValue: 'graviton', description: 'firmware hex file name', ),
+        string(name: 'SEC_BRANCH_NAME', defaultValue: 'quark_gaming_mice',
+            description: 'device project branch name on goldenpass', ),
+        string(name: 'SEC_SOC_NAME', defaultValue: 'GRAVITON', description: 'System on a Chip definition', ),
+        string(name: 'COMPANION_PROJECT_NAME', defaultValue: 'savituck', description: 'companion firmware hex file name', ),
+        string(name: 'COMPANION_BRANCH_NAME', defaultValue: 'cc14_savituck_stm32', description: 'companion project branch name', ),
+        string(name: 'ACTION_TYPES_TO_BUILD', defaultValue: '1',
+            description: 'Action types values that will be used for -Dbtldr_ACTION_APP_TYPE to build extra hex files with the wanted action type for feature 0x00C3', ),
+        string(name: 'PYTESTBOX_BRANCH_NAME', defaultValue: '*/develop',
+            description: 'pyTestBox repo branch name', )
+  ]),
+// End of Pipeline Configuration Section
+// -------------------------------------
+    pipelineTriggers([
+        // Trigger every sunday  between 12:00 AM (midnight) to 7:59 AM
+        cron('H H(0-7) * * 0'),
+        // Trigger on every update on master 
+        gerrit(
+            serverName: 'goldenpass',
+            gerritProjects: [[
+                compareType: 'PLAIN',
+                pattern: "ccp_fw/${params.BRANCH_NAME}",
+                branches: [[ compareType: 'PLAIN', pattern: 'mpr07_savituck' ]],
+                disableStrictForbiddenFileVerification: false
+            ]],
+            silentMode: true,
+            triggerOnEvents: [
+                refUpdated(),
+                commentAddedContains('(?i)^(Patch Set [0-9]+:)?( [\\w\\\\+-]*)*(\\n\\n)?\\s*(recheck)'),
+            ]
+        )
+    ]),
+])
+
+timestamps {
+
+    node ('builder') {
+        stage ('Build Job - Checkout') {
+            if (env.GERRIT_CHANGE_SUBJECT && env.GERRIT_CHANGE_OWNER_NAME) {
+                echo "ChangeLog: ${env.GERRIT_CHANGE_SUBJECT} from ${env.GERRIT_CHANGE_OWNER_NAME}"
+            }
+            if (env.GERRIT_REFSPEC) {
+                ref_spec = env.GERRIT_REFSPEC
+                branch_name = env.GERRIT_PATCHSET_REVISION
+            }
+            else
+            {
+                ref_spec = '+refs/heads/*:refs/remotes/origin/*'
+                branch_name = '*/mpr07_savituck'
+            }
+            echo "Refspec for checkout: ${ref_spec}"
+            checkout([$class: 'GitSCM',
+                branches: [[name: "${branch_name}"]], doGenerateSubmoduleConfigurations: false,
+                extensions: [[ $class: 'CleanCheckout'],
+                    [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: false,
+                    recursiveSubmodules: true, reference: '', trackingSubmodules: false
+                ]],
+                submoduleCfg: [],
+                userRemoteConfigs: [[credentialsId: 'Jenkins user',
+                    url: "ssh://Jenkins@goldenpass.logitech.com:29418/ccp_fw/${params.BRANCH_NAME}",
+                    refspec: "${ref_spec}"
+                ]]
+            ])
+        } // End of stage ('Build Job - Checkout')
+
+        stage ('Build Job - Build') {
+            echo "PROJECT_NAME = ${params.PROJECT_NAME}"
+            if (params.CODE_PATCHSET != '') {
+              // Shell build step - sync on a patchset
+              sh "git fetch ssh://Jenkins@goldenpass.logitech.com:29418/ccp_fw/${params.BRANCH_NAME} refs/changes/${params.CODE_PATCHSET}"
+              sh "git checkout FETCH_HEAD"
+            } else {
+              if (params.CODE_TAG != '') {
+                // Shell build step - sync on a tag
+                sh "git checkout tags/${params.CODE_TAG}"
+              }
+            }
+            sh "git submodule update -i"
+            sh "git clean -x -f"
+            // Shell build step - Build production and test firmwares,
+            //                    valid test dfu and phcs#1 v1.5 verification dfu files
+            // Shell build step - Copy hard-coded Jenkins dfu key into dfu test key
+            sh """
+              cd gcc_eclipse
+              make clean PROJECT=${params.PROJECT_NAME}
+              make clean PROJECT=${params.PROJECT_NAME} OUT_DIR_PFX=build_ci
+              cp ../config/priv_tstkey_jenkins.pem ../config/priv_tstkey.pem
+              CFLAGS=-Werror make -j8 BUILD_CONFIG=PROD PROJECT=${params.PROJECT_NAME}
+              CPPFLAGS=-DCI_BUILD=1 make -j8 PROJECT=${params.PROJECT_NAME} OUT_DIR_PFX=build_ci
+              CPPFLAGS=-DCI_BUILD=1 make -j8 BUILD_CONFIG=PROD PROJECT=${params.PROJECT_NAME} OUT_DIR_PFX=build_ci dfu_evt
+            """
+            sh(returnStdout: true, script: '''#!/bin/bash
+              if [ ! -z "$(git status --porcelain)" ]; then
+                echo "Uncommitted changes in tracked files"
+                echo "$(git status --porcelain)"
+                exit 1
+              fi
+            '''.stripIndent())
+            archiveArtifacts allowEmptyArchive: false,
+                             artifacts: """**gcc_eclipse/**/*.dfu,
+                                           **gcc_eclipse/build_*/${params.PROJECT_NAME}*.hex,
+                                           **gcc_eclipse/build_ci_*prod/${params.PROJECT_NAME}*.elf,
+                                           **/dfu_*_key.txt,
+                                           **/priv_tstkey_jenkins.pem,
+                                           **gcc_eclipse/build_ci_*prod/*.map""",
+                             caseSensitive: true,
+                             defaultExcludes: true,
+                             fingerprint: false,
+                             onlyIfSuccessful: false
+            // Clean workspace at build end
+            cleanWs()
+        } // End of stage ('Build Job - Build')
+    } // End of node ('builder')
+
+    node ('fw_check') {
+        stage ('Firmwares Comparison Job - Checkout') {
+            checkout([$class: 'GitSCM',
+                branches: [[name: "${params.PYTESTBOX_BRANCH_NAME}"]], doGenerateSubmoduleConfigurations: false,
+                extensions: [[$class: 'CleanCheckout'],
+                    [$class: 'PruneStaleBranch'], pruneTags(true),
+                    [$class: 'SubmoduleOption',
+                    disableSubmodules: false,
+                    parentCredentials: true,
+                    recursiveSubmodules: true,
+                    reference: '',
+                    trackingSubmodules: false
+                ]],
+                submoduleCfg: [],
+                userRemoteConfigs: [[credentialsId: 'GithubProductsCIToken', url: "https://github.com/Logitech/py-test-box.git"]]
+            ])
+        } // End of stage ('Firmwares Comparison Job - Checkout')
+
+        stage ('Firmwares Comparison Job - Build') {
+            script {
+                copyArtifacts(
+                    filter: """**gcc_eclipse/build_*/${params.PROJECT_NAME}_prod.hex,
+                               **gcc_eclipse/build_ci_*prod/${params.PROJECT_NAME}*.elf""",
+                    projectName: env.JOB_NAME,
+                    fingerprintArtifacts: true,
+                    selector: specific(env.BUILD_NUMBER),
+                    target: 'PYTESTBOX/TESTS/DFU_FILES'
+                )
+
+                try {
+                    // Shell Unit Test step - framework initialization
+                    sh """
+                      python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py
+                    """
+                    def path = 'PYTESTBOX/TESTS/DFU_FILES/gcc_eclipse/build_'
+                    // Shell Unit Test step - production vs test firmwares comparison
+                    sh """
+                      python3 PYTESTBOX/CICD/ciscripts/compare_hex.py  \
+                          -f ${path}${params.PROJECT_NAME}/${params.PROJECT_NAME}_prod.hex  \
+                          -c ${path}ci_${params.PROJECT_NAME}/${params.PROJECT_NAME}_prod.hex \
+                          -b ${path}ci_${params.PROJECT_NAME}_btldr_prod/${params.PROJECT_NAME}_btldr.elf \
+                          -e ${path}ci_${params.PROJECT_NAME}_app_prod/${params.PROJECT_NAME}_app.elf \
+                          -a build_ci_check
+                    """
+                }
+                finally {
+                    try {
+                        // Permission cleanup
+                        sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                    }
+                    catch(all) {
+                        echo 'Error cleaning up permissions'
+                    }
+                }
+            }
+        } // End of stage ('Firmwares Comparison Job - Build')
+    } // End of node ('slave')
+
+    node ('builder') {
+        stage ('Secondary Project (${params.SEC_PROJECT_NAME}) Build Job - Checkout') {
+            checkout([$class: 'GitSCM',
+                branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false,
+                extensions: [[ $class: 'CleanCheckout'],
+                    [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: false,
+                    recursiveSubmodules: true, reference: '', trackingSubmodules: false
+                ]],
+                submoduleCfg: [],
+                userRemoteConfigs: [[credentialsId: 'Jenkins user',
+                    url: "ssh://Jenkins@goldenpass.logitech.com:29418/ccp_fw/${params.SEC_BRANCH_NAME}"
+                ]]
+            ])
+        } // End of stage ('Secondary Project (${params.SEC_PROJECT_NAME}) Build Job - Checkout')
+
+        stage ('Secondary Project (${params.SEC_PROJECT_NAME}) Build Job - Build') {
+            echo "PROJECT_NAME = ${params.SEC_PROJECT_NAME}"
+            sh "git submodule update -i"
+            sh "git clean -x -f"
+            // Shell build step - Build production and test firmwares,
+            //                    valid test dfu and phcs#1 v1.5 verification dfu files
+            // Shell build step - Copy hard-coded Jenkins dfu key into dfu test key
+            sh """
+              cd gcc_eclipse
+              make clean PROJECT=${params.SEC_PROJECT_NAME} OUT_DIR_PFX=build_ci
+              cp ../config/priv_tstkey_jenkins.pem ../config/priv_tstkey.pem
+              CPPFLAGS=-DCI_BUILD=1 make -j8 BUILD_CONFIG=PROD PROJECT=${params.SEC_PROJECT_NAME} OUT_DIR_PFX=build_ci dfu_evt
+              cd build_ci_${params.SEC_PROJECT_NAME}/dfu_evt_prod
+              mv good.dfu ${params.SEC_PROJECT_NAME}_prod.dfu
+            """
+            archiveArtifacts allowEmptyArchive: false,
+                             artifacts: """**gcc_eclipse/**/${params.SEC_PROJECT_NAME}_prod.dfu,
+                                           **gcc_eclipse/build_ci_*/${params.SEC_PROJECT_NAME}_prod.hex""",
+                             caseSensitive: true,
+                             defaultExcludes: true,
+                             fingerprint: false,
+                             onlyIfSuccessful: false
+            // Clean workspace at build end
+            cleanWs()
+        } // End of stage ('Secondary Project (${params.SEC_PROJECT_NAME}) Build Job - Build')
+    } // End of node ('builder')
+
+    node (label: 'builder && gcc-arm-none-eabi-10.3-2021.10') {
+        stage ('Companion Project (${params.COMPANION_PROJECT_NAME}) Build Job - Checkout') {
+            checkout([$class: 'GitSCM',
+                branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false,
+                extensions: [[ $class: 'CleanCheckout'],
+                    [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: false,
+                    recursiveSubmodules: true, reference: '', trackingSubmodules: false
+                ]],
+                submoduleCfg: [],
+                userRemoteConfigs: [[credentialsId: 'Jenkins user',
+                    url: "ssh://Jenkins@goldenpass.logitech.com:29418/ccp_fw/${params.COMPANION_BRANCH_NAME}"
+                ]]
+            ])
+        } // End of stage ('Companion Project (${params.COMPANION_PROJECT_NAME}) Build Job - Checkout')
+
+        stage ('Companion Project (${params.COMPANION_PROJECT_NAME}) Build Job - Build') {
+            echo "PROJECT_NAME = ${params.COMPANION_PROJECT_NAME}"
+            sh "git submodule update --init --recursive"
+            sh "git clean -x -f"
+            // Shell build step
+            sh """
+              cd gcc-arm-gnueabi
+              make distclean
+              CPPFLAGS=-DCI_BUILD=1 make dfu_evt
+              mkdir bin/ci_build
+              cp -r bin/release bin/ci_build
+              cp -r bin/dfu_evt bin/ci_build
+              cd bin/ci_build/dfu_evt/
+              for FILENAME in *; do mv "\${FILENAME}" "companion_\${FILENAME}"; done
+              cd ../../..
+              make distclean
+              make
+            """
+            archiveArtifacts allowEmptyArchive: false,
+                             artifacts: """**gcc-arm-gnueabi/bin/release/**stm32.hex,
+                                           **gcc-arm-gnueabi/bin/boot/*.map,
+                                           **gcc-arm-gnueabi/bin/boot/*.elf,
+                                           **gcc-arm-gnueabi/bin/appl/*.map,
+                                           **gcc-arm-gnueabi/bin/appl/*.elf,
+                                           **gcc-arm-gnueabi/bin/ci_build/release/*stm32.hex,
+                                           **gcc-arm-gnueabi/bin/ci_build/dfu_evt/**""",
+                             caseSensitive: true,
+                             defaultExcludes: true,
+                             fingerprint: false,
+                             onlyIfSuccessful: false
+            // Clean workspace at build end
+            cleanWs()
+        } // End of stage ('Companion Project (${params.COMPANION_PROJECT_NAME}) Build Job - Build')
+    } // End of node ('builder')
+
+    node ('fw_check') {
+        stage ('Companion Firmwares Comparison Job - Checkout') {
+            checkout([$class: 'GitSCM',
+                branches: [[name: "${params.PYTESTBOX_BRANCH_NAME}"]], doGenerateSubmoduleConfigurations: false,
+                extensions: [[$class: 'CleanCheckout'],
+                    [$class: 'PruneStaleBranch'], pruneTags(true),
+                    [$class: 'SubmoduleOption',
+                    disableSubmodules: false,
+                    parentCredentials: true,
+                    recursiveSubmodules: true,
+                    reference: '',
+                    trackingSubmodules: false
+                ]],
+                submoduleCfg: [],
+                userRemoteConfigs: [[credentialsId: 'GithubProductsCIToken', url: "https://github.com/Logitech/py-test-box.git"]]
+            ])
+        } // End of stage ('Companion Firmwares Comparison Job - Checkout')
+
+        stage ('Companion Firmwares Comparison Job - Build') {
+            script {
+                copyArtifacts(
+                    filter: """**gcc-arm-gnueabi/bin/release/**.hex,
+                               **gcc-arm-gnueabi/bin/boot/*.map,
+                               **gcc-arm-gnueabi/bin/boot/*.elf,
+                               **gcc-arm-gnueabi/bin/appl/*.map,
+                               **gcc-arm-gnueabi/bin/appl/*.elf,
+                               **gcc-arm-gnueabi/bin/ci_build/release/*.hex""",
+                    projectName: env.JOB_NAME,
+                    fingerprintArtifacts: true,
+                    selector: specific(env.BUILD_NUMBER),
+                    target: 'PYTESTBOX/TESTS/DFU_FILES'
+                )
+
+                try {
+                    // Shell Unit Test step - framework initialization
+                    sh """
+                      python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py
+                    """
+                    def path = 'PYTESTBOX/TESTS/DFU_FILES/gcc-arm-gnueabi/bin/'
+                    // Shell Unit Test step - production vs test firmwares comparison
+                    sh """
+                      python3 PYTESTBOX/CICD/ciscripts/compare_hex.py  \
+                          -f ${path}release/*.hex  \
+                          -c ${path}ci_build/release/*.hex  \
+                          -b ${path}boot/*.elf \
+                          -e ${path}appl/*.elf  \
+                          -a build_ci_check
+                    """
+                }
+                finally {
+                    try {
+                        // Permission cleanup
+                        sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                    }
+                    catch(all) {
+                        echo 'Error cleaning up permissions'
+                    }
+                }
+            }
+        } // End of stage ('Companion Firmwares Comparison Job - Build')
+    } // End of node ('slave')
+
+    node (label: "${params.PROJECT_NAME} && gaming_${params.SEC_PROJECT_NAME}") {
+        stage ('Test Execution Job - Checkout') {
+            checkout(
+                [$class: 'GitSCM',
+                    branches: [[name: "${params.PYTESTBOX_BRANCH_NAME}"]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: scm.extensions + [[$class: 'CleanCheckout'],
+                        [$class: 'PruneStaleBranch'], pruneTags(true),
+                        [$class: 'SubmoduleOption',
+                        disableSubmodules: false,
+                        parentCredentials: true,
+                        recursiveSubmodules: true,
+                        reference: '',
+                        trackingSubmodules: false
+                    ]],
+                    submoduleCfg: [],
+                    userRemoteConfigs: [
+                     [credentialsId: 'GithubProductsCIToken',
+                      url: "https://github.com/Logitech/py-test-box.git"]
+                    ]
+                ]
+            )
+        } // End of stage ('Test Execution Job - Checkout')
+
+        stage ('Test Execution Job - Build') {
+            script {
+                copyArtifacts(
+                    filter: """**gcc_eclipse/**/*.dfu,
+                               **gcc_eclipse/build_ci_*/${params.PROJECT_NAME}_prod.hex,
+                               **gcc_eclipse/build_ci_*/${params.SEC_PROJECT_NAME}_prod.hex,
+                               **/${params.PROJECT_NAME}_app.elf,
+                               **/dfu_${params.PROJECT_NAME}_key.txt,
+                               **/priv_tstkey_jenkins.pem,
+                               **gcc-arm-gnueabi/bin/ci_build/release/**.hex,
+                               **gcc-arm-gnueabi/bin/ci_build/dfu_evt/**""",
+                    projectName: env.JOB_NAME,
+                    fingerprintArtifacts: true,
+                    selector: specific(env.BUILD_NUMBER),
+                    target: 'PYTESTBOX/TESTS/DFU_FILES',
+                    flatten: true
+                )
+
+                try {
+                      // Shell build step - framework initialization
+                      sh """
+                        python3 PYTESTBOX/LIBS/PYSETUP/pyEnvChecker.py
+                      """
+                      // Get Node Name
+                      def node_name = "${NODE_NAME}"
+                      clean_node_name = node_name.replaceAll("\\s","_")
+                      echo "The Node Name is: ${clean_node_name}"
+                      // Shell Integration Test step - Node Setup
+                      sh """
+                        python3 PYTESTBOX/TESTS/main.py \
+                            --file=PYTESTBOX/TESTS/SETTINGS/testFilter.txt \
+                            --variant=RECEIVER/${params.SETUP_CONFIG} \
+                            --product=PYTESTBOX \
+                            --target=DEVICE \
+                            --output=console,log,junit,jrl \
+                            --level=CiScript \
+                            --keep
+                      """
+                }
+                finally {
+                    try {
+                        // Permission cleanup
+                        sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                    }
+                    catch(all) {
+                        echo 'Error cleaning up permissions'
+                    }
+                }
+
+                // Save Node Setup JUnit Results and check current build status
+                junit "**/LOCAL/**/${params.SETUP_CONFIG}/**/*.xml"
+                archiveArtifacts allowEmptyArchive: true, artifacts: """**/LOCAL/**/${params.SETUP_CONFIG}/**/log/*.log"""
+                if (currentBuild.currentResult != 'SUCCESS') {sh "exit 1"}
+
+                try {
+                      timeout(time: 60, unit: 'MINUTES', activity: true) {
+                        // Shell Integration Test step - tests execution
+                        sh """
+                          python3 PYTESTBOX/TESTS/main.py  \
+                              --file=PYTESTBOX/TESTS/SETTINGS/testFilter.txt \
+                              --variant=RECEIVER/${params.TEST_CONFIG} \
+                              --product=PYTESTBOX \
+                              --target=DEVICE \
+                              --output=console,log,junit,jrl \
+                              --level=Interface,Business,Functionality,ErrorHandling,Robustness,Security,Time-consuming
+                        """
+                      }
+                }
+                finally {
+                    try {
+                        // Permission cleanup
+                        sh "python3 PYTESTBOX/CICD/ciscripts/permissions_clean_up.py"
+                    }
+                    catch(all) {
+                        echo 'Error cleaning up permissions'
+                    }
+                }
+            }
+          // Save JUnit Results
+          junit "**/LOCAL/**/${params.TEST_CONFIG}/**/*.xml"
+          archiveArtifacts allowEmptyArchive: true, artifacts: "**/LOCAL/**/${params.TEST_CONFIG}/**/log/*.log", caseSensitive: true, defaultExcludes: true, fingerprint: false, onlyIfSuccessful: false
+        } // End of stage ('Test Execution Job - Build')
+    } // End of node (label: "${params.PROJECT_NAME} && gaming_${params.SEC_PROJECT_NAME}")
+} // End of timestamps

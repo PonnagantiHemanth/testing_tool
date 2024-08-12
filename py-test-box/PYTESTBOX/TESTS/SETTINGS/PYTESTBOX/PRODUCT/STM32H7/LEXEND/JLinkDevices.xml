@@ -1,0 +1,6 @@
+<DataBase>
+  <Device>
+   <ChipInfo Vendor="ST" Name="Lexend" WorkRAMAddr="0x24000000" WorkRAMSize="0x20000" Core="JLINK_CORE_CORTEX_M7" JLinkScriptFile="Lexend.JLinkScript"/>
+   <FlashBankInfo Name="QSPI Flash" BaseAddr="0x90000000" MaxSize="0x0800000" Loader="RAMCodeSFL_SPIFI_ST_STM32H7B0_Lexend.elf" LoaderType="FLASH_ALGO_TYPE_OPEN" />
+  </Device>
+</DataBase>

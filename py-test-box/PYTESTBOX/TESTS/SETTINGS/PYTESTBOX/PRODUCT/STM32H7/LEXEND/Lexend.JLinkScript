@@ -1,0 +1,624 @@
+/***********************************************************************
+*                    SEGGER Microcontroller GmbH                       *
+*                        The Embedded Experts                          *
+************************************************************************
+*                                                                      *
+*                  (c) SEGGER Microcontroller GmbH                     *
+*                        All rights reserved                           *
+*                          www.segger.com                              *
+*                                                                      *
+************************************************************************
+*                                                                      *
+************************************************************************
+*                                                                      *
+*                                                                      *
+*  Licensing terms                                                     *
+*                                                                      *
+* The use in source and binary forms, with or without modification,    *
+* is permitted for internal use only. The redistribution to any        *
+* third party is prohibited.                                           *
+*                                                                      *
+*                                                                      *
+* THIS SOFTWARE IS PROVIDED BY COPYRIGHT HOLDER "AS IS" AND ANY        *
+* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE    *
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR   *
+* PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDER BE        *
+* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,     *
+* OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,             *
+* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR   *
+* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  *
+* OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT         *
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE    *
+* USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH     *
+* DAMAGE.                                                              *
+*                                                                      *
+************************************************************************
+
+-------------------------- END-OF-HEADER -----------------------------
+
+Purpose: Script for pin initialization of ST STM32H730xx OSPI flash bank.
+Literature:
+  [1]  J-Link User Guide
+
+Additional information:
+  This script performs the prepare and restore for STM32H730xx OSPI flash bank. 
+  Specifically, the following steps are performed:
+    - Initialize clocks of configured pins
+    - If neccessary, initialize OSPI controller with dual quad mode (DQM) bit
+    - If neccessary, initialize OSPI controller with flash select (FSEL) bit
+    - Initialize configured pins
+    
+  For more information about public functions that can be implemented in order to customize J-Link actions, please refer to [1]
+*/
+
+/*********************************************************************
+*
+*       Constants (similar to defines, fixed)
+*
+**********************************************************************
+*/
+
+//
+// GPIO indices 
+//
+__constant U8 _INDEX_GPIOA  = 0x00;
+__constant U8 _INDEX_GPIOB  = 0x01;
+__constant U8 _INDEX_GPIOC  = 0x02;
+__constant U8 _INDEX_GPIOD  = 0x03;
+__constant U8 _INDEX_GPIOE  = 0x04;
+__constant U8 _INDEX_GPIOF  = 0x05;
+__constant U8 _INDEX_GPIOG  = 0x06;
+__constant U8 _INDEX_GPIOH  = 0x07;
+__constant U8 _INDEX_GPIOI  = 0x08;
+__constant U8 _INDEX_GPIOJ  = 0x09;
+__constant U8 _INDEX_GPIOK  = 0x0A;
+//__constant U8 _INDEX_GPIOL  = 0x0B; => Not existing but theoretically addressable via our concept
+//__constant U8 _INDEX_GPIOM  = 0x0C; => Not existing but theoretically addressable via our concept
+//__constant U8 _INDEX_GPION  = 0x0D; => Not existing but theoretically addressable via our concept
+//__constant U8 _INDEX_GPIOO  = 0x0E; => Not existing but theoretically addressable via our concept
+//__constant U8 _INDEX_GPIOP  = 0x0F; => Not existing but theoretically addressable via our concept
+//
+// Alternate function constants
+//
+__constant U8 _GPIO_AF0                   = 0x00;
+__constant U8 _GPIO_AF1                   = 0x01;
+__constant U8 _GPIO_AF2                   = 0x02;
+__constant U8 _GPIO_AF3                   = 0x03;
+__constant U8 _GPIO_AF4                   = 0x04;
+__constant U8 _GPIO_AF5                   = 0x05;
+__constant U8 _GPIO_AF6                   = 0x06;
+__constant U8 _GPIO_AF7                   = 0x07;
+__constant U8 _GPIO_AF8                   = 0x08;
+__constant U8 _GPIO_AF9                   = 0x09;
+__constant U8 _GPIO_AF10                  = 0x0A;
+__constant U8 _GPIO_AF11                  = 0x0B;
+__constant U8 _GPIO_AF12                  = 0x0C;
+__constant U8 _GPIO_AF13                  = 0x0D;
+__constant U8 _GPIO_AF14                  = 0x0E;
+__constant U8 _GPIO_AF15                  = 0x0F;
+//
+// Pin constants (Fixed)
+//
+// [31:31] Must be 0. Entry is invalid if == 1
+// [30:12] Reserved
+// [11:8]  Alternate function
+// [7:4]   GPIO port. 0 == GPIOA, 1 == GPIOB, 2 == GPIOC, ...
+// [3:0]   Pin index relative to GPIO. E.g. PA0 = 0, PA1 = 1, PB0 = 0, PB1 = 1, ...
+//
+//             Pin name                       Alternate function  GPIO port             Pin index
+__constant U32 _UNUSED_PIN                 = (0xFFFFFFFF);
+__constant U32 _PA1                        = ((_GPIO_AF9  << 8) | (_INDEX_GPIOA << 4) | (0x01 << 0));
+__constant U32 _PA2                        = ((_GPIO_AF6  << 8) | (_INDEX_GPIOA << 4) | (0x02 << 0));
+__constant U32 _PA3                        = ((_GPIO_AF6  << 8) | (_INDEX_GPIOA << 4) | (0x03 << 0));
+__constant U32 _PA6                        = ((_GPIO_AF6  << 8) | (_INDEX_GPIOA << 4) | (0x06 << 0));
+__constant U32 _PA7                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOA << 4) | (0x07 << 0));
+__constant U32 _PB0                        = ((_GPIO_AF4  << 8) | (_INDEX_GPIOB << 4) | (0x00 << 0));
+__constant U32 _PB1                        = ((_GPIO_AF4  << 8) | (_INDEX_GPIOB << 4) | (0x01 << 0));
+__constant U32 _PB10                       = ((_GPIO_AF9  << 8) | (_INDEX_GPIOB << 4) | (0x0A << 0));
+__constant U32 _PB12                       = ((_GPIO_AF12 << 8) | (_INDEX_GPIOB << 4) | (0x0C << 0));
+__constant U32 _PB13                       = ((_GPIO_AF4  << 8) | (_INDEX_GPIOB << 4) | (0x0D << 0));
+__constant U32 _PB2                        = ((_GPIO_AF9  << 8) | (_INDEX_GPIOB << 4) | (0x02 << 0));
+__constant U32 _PB6                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOB << 4) | (0x06 << 0));
+__constant U32 _PC1                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOC << 4) | (0x01 << 0));
+__constant U32 _PC10                       = ((_GPIO_AF9  << 8) | (_INDEX_GPIOC << 4) | (0x0A << 0));
+__constant U32 _PC11                       = ((_GPIO_AF9  << 8) | (_INDEX_GPIOC << 4) | (0x0B << 0));
+__constant U32 _PC2                        = ((_GPIO_AF9  << 8) | (_INDEX_GPIOC << 4) | (0x02 << 0));
+__constant U32 _PC3                        = ((_GPIO_AF9  << 8) | (_INDEX_GPIOC << 4) | (0x03 << 0));
+__constant U32 _PC9                        = ((_GPIO_AF9  << 8) | (_INDEX_GPIOC << 4) | (0x09 << 0));
+__constant U32 _PD11                       = ((_GPIO_AF9  << 8) | (_INDEX_GPIOD << 4) | (0x0B << 0));
+__constant U32 _PD12                       = ((_GPIO_AF9  << 8) | (_INDEX_GPIOD << 4) | (0x0C << 0));
+__constant U32 _PD13                       = ((_GPIO_AF9  << 8) | (_INDEX_GPIOD << 4) | (0x0D << 0));
+__constant U32 _PD4                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOD << 4) | (0x04 << 0));
+__constant U32 _PD5                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOD << 4) | (0x05 << 0));
+__constant U32 _PD6                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOD << 4) | (0x06 << 0));
+__constant U32 _PD7                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOD << 4) | (0x07 << 0));
+__constant U32 _PE10                       = ((_GPIO_AF10 << 8) | (_INDEX_GPIOE << 4) | (0x0A << 0));
+__constant U32 _PE11                       = ((_GPIO_AF11 << 8) | (_INDEX_GPIOE << 4) | (0x0B << 0));
+__constant U32 _PE2                        = ((_GPIO_AF9  << 8) | (_INDEX_GPIOE << 4) | (0x02 << 0));
+__constant U32 _PE7                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOE << 4) | (0x07 << 0));
+__constant U32 _PE8                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOE << 4) | (0x08 << 0));
+__constant U32 _PE9                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOE << 4) | (0x09 << 0));
+__constant U32 _PF10                       = ((_GPIO_AF9  << 8) | (_INDEX_GPIOF << 4) | (0x0A << 0));
+__constant U32 _PF6                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOF << 4) | (0x06 << 0));
+__constant U32 _PF7                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOF << 4) | (0x07 << 0));
+__constant U32 _PF8                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOF << 4) | (0x08 << 0));
+__constant U32 _PF9                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOF << 4) | (0x09 << 0));
+__constant U32 _PG14                       = ((_GPIO_AF9  << 8) | (_INDEX_GPIOG << 4) | (0x0E << 0));
+__constant U32 _PG6                        = ((_GPIO_AF10 << 8) | (_INDEX_GPIOG << 4) | (0x06 << 0));
+__constant U32 _PG9                        = ((_GPIO_AF9  << 8) | (_INDEX_GPIOG << 4) | (0x09 << 0));
+__constant U32 _PH2                        = ((_GPIO_AF9  << 8) | (_INDEX_GPIOH << 4) | (0x02 << 0));
+__constant U32 _PH3                        = ((_GPIO_AF9  << 8) | (_INDEX_GPIOH << 4) | (0x03 << 0));
+//
+// _INDEX_GPIOx defines are used as index into this array to get the base address of the GPIO unit
+// Array describes all possible GPIO units from A-K
+//
+static const U32 _aGPIOAddr[11] = { 0x58020000, 0x58020400, 0x58020800, 0x58020C00, 0x58021000, 0x58021400, 0x58021800, 0x58021C00, 0x58022000, 0x58022400, 0x58022800 };
+//
+// RCC registers
+//
+__constant U32 _RCC_BASE_ADDR              = (0x58024400);
+__constant U32 _REG_RCC_D1CCIPR            = (_RCC_BASE_ADDR + 0x004C); // RCC domain 1 kernel clock configuration register
+__constant U32 _REG_RCC_AHB3RSTR           = (_RCC_BASE_ADDR + 0x007C); // RCC AHB3 peripheral reset register
+__constant U32 _REG_RCC_AHB3ENR            = (_RCC_BASE_ADDR + 0x00D4); // RCC AHB3 peripheral clock enable register
+__constant U32 _REG_RCC_AHB4ENR            = (_RCC_BASE_ADDR + 0x00E0); // RCC AHB4 peripheral clock enable register
+//
+// OCTOSPI registers
+//
+__constant U32 _OCTOSPI_BASE_ADDR          = (0x52005000);
+__constant U32 _REG_OCTOSPI_CR             = (_OCTOSPI_BASE_ADDR + 0x0000); // OCTOSPI Control register
+//
+// GPIO register offsets
+//
+__constant U32 _GPIOx_MODER                = (0x00);
+__constant U32 _GPIOx_OTYPER               = (0x04);
+__constant U32 _GPIOx_OSPEEDR              = (0x08);
+__constant U32 _GPIOx_PUPDR                = (0x0C);
+__constant U32 _GPIOx_IDR                  = (0x10);
+__constant U32 _GPIOx_ODR                  = (0x14);
+__constant U32 _GPIOx_BSRR                 = (0x18);
+__constant U32 _GPIOx_LCKR                 = (0x1C);
+__constant U32 _GPIOx_AFRL                 = (0x20);
+__constant U32 _GPIOx_AFRH                 = (0x24);
+//
+// GPIO register values
+//
+__constant U8  _GPIOx_MODER_AF             = (0x02);
+__constant U8  _GPIOx_OSPEEDR_VERY_HIGH    = (0x03);
+__constant U8  _GPIOx_OTYPER_PUSH_PULL     = (0x00);
+__constant U8  _GPIOx_PUPDR_NONE           = (0x00);
+__constant U8  _GPIOx_PUPDR_PULL_UP        = (0x01);
+//
+// GPIO register masks
+//
+__constant U8  _MASK_MODER                 = (0x03);
+__constant U8  _MASK_OSPEEDR               = (0x03);
+__constant U8  _MASK_OTYPER                = (0x01);
+__constant U8  _MASK_PUPDR                 = (0x03);
+__constant U8  _MASK_AFR                   = (0x0F);
+//
+// GPIO register bits per pin
+//
+__constant U8  _BITSPERPIN_MODER           = (0x02);
+__constant U8  _BITSPERPIN_OSPEEDR         = (0x02);
+__constant U8  _BITSPERPIN_OTYPER          = (0x01);
+__constant U8  _BITSPERPIN_PUPDR           = (0x02);
+__constant U8  _BITSPERPIN_AFR             = (0x04);
+//
+// OCTOSPI_CR 
+//
+__constant U32 _OCTOSPI_CR_DQM_SHIFT       = (0x06);
+__constant U32 _OCTOSPI_CR_FSEL_SHIFT      = (0x07);
+//
+// RCC
+//
+__constant U32 _REG_RCC_AHB3ENR_OCTOSPI_SHIFT  = (14);
+__constant U32 _REG_RCC_AHB3RSTR_OCTOSPI_SHIFT = (14);
+
+/*********************************************************************
+*
+*       Pin configuration (user configurable)
+*
+**********************************************************************
+*/
+//
+// User may change the pin configuration here.
+// The script is intended to work with all available pin configurations by adjusting the static variables listed 
+// below. Do NOT change anything other than those variables.
+//
+__constant U32 _FSEL            = 1;                 // Flash selection. Either 1 or 2
+__constant U32 _DQM             = 0;                 // Dual-quad mode. Either 0 or 1
+__constant U32 _OCTOSPIM_P1_CLK = _PB2;             // Valid selections: _PA3, _PB2, _PF10
+__constant U32 _OCTOSPIM_P1_NCS = _PC11;              // Valid selections: _PB6, _PB10, _PC11, _PE11, _PG6
+__constant U32 _OCTOSPIM_P1_IO0 = _PF8;             // Valid selections: _PA2, _PB1, _PB12, _PC3, _PC9, _PD11, _PF8
+__constant U32 _OCTOSPIM_P1_IO1 = _PF9;             // Valid selections: _PB0, _PC10, _PD12, _PF9
+__constant U32 _OCTOSPIM_P1_IO2 = _PF7;              // Valid selections: _PA3, _PA7, _PB13, _PC2, _PE2, _PF7
+__constant U32 _OCTOSPIM_P1_IO3 = _PF6;             // Valid selections: _PA1, _PA6, _PD13, _PF6
+__constant U32 _OCTOSPIM_P1_IO4 = _UNUSED_PIN;       // Valid selections: _PC1, _PD4, _PE7, _PH2
+__constant U32 _OCTOSPIM_P1_IO5 = _UNUSED_PIN;       // Valid selections: _PC2, _PD5, _PE8, _PH3
+__constant U32 _OCTOSPIM_P1_IO6 = _UNUSED_PIN;       // Valid selections: _PC3, _PD6, _PE9, _PG9
+__constant U32 _OCTOSPIM_P1_IO7 = _UNUSED_PIN;       // Valid selections: _PD7, _PE10, _PG14
+
+/*********************************************************************
+*
+*       Static data (Restore values)
+*
+**********************************************************************
+*/
+
+static U8  vCLK_AFR;
+static U8  vCLK_MODER;
+static U8  vCLK_OSPEEDR;
+static U8  vCLK_OTYPER;
+static U8  vCLK_PUPDR;
+static U8  vNCS_AFR;
+static U8  vNCS_MODER;
+static U8  vNCS_OSPEEDR;
+static U8  vNCS_OTYPER;
+static U8  vNCS_PUPDR;
+static U8  vIO0_AFR;
+static U8  vIO0_MODER;
+static U8  vIO0_OSPEEDR;
+static U8  vIO0_OTYPER;
+static U8  vIO0_PUPDR;
+static U8  vIO1_AFR;
+static U8  vIO1_MODER;
+static U8  vIO1_OSPEEDR;
+static U8  vIO1_OTYPER;
+static U8  vIO1_PUPDR;
+static U8  vIO2_AFR;
+static U8  vIO2_MODER;
+static U8  vIO2_OSPEEDR;
+static U8  vIO2_OTYPER;
+static U8  vIO2_PUPDR;
+static U8  vIO3_AFR;
+static U8  vIO3_MODER;
+static U8  vIO3_OSPEEDR;
+static U8  vIO3_OTYPER;
+static U8  vIO3_PUPDR;
+static U8  vIO4_AFR;
+static U8  vIO4_MODER;
+static U8  vIO4_OSPEEDR;
+static U8  vIO4_OTYPER;
+static U8  vIO4_PUPDR;
+static U8  vIO5_AFR;
+static U8  vIO5_MODER;
+static U8  vIO5_OSPEEDR;
+static U8  vIO5_OTYPER;
+static U8  vIO5_PUPDR;
+static U8  vIO6_AFR;
+static U8  vIO6_MODER;
+static U8  vIO6_OSPEEDR;
+static U8  vIO6_OTYPER;
+static U8  vIO6_PUPDR;
+static U8  vIO7_AFR;
+static U8  vIO7_MODER;
+static U8  vIO7_OSPEEDR;
+static U8  vIO7_OTYPER;
+static U8  vIO7_PUPDR;
+static U32 vREG_RCC_AHB3ENR;
+static U32 vREG_RCC_AHB4ENR;
+static U32 vREG_RCC_D1CCIPR;
+static U32 vREG_OCTOSPI_CR;
+
+/*********************************************************************
+*
+*       Static functions
+*
+**********************************************************************
+*/
+
+/*********************************************************************
+*
+*       _SetReg
+*
+*  Function description
+*    Modifies a specific register with a new value.
+*
+*  Parameters
+*    Port:       The base adress of the GPIO port
+*    Offset:     Offset of the register relative to the port base address
+*    Pin:        The pin for which the register value should be changed
+*    Mask:       The bit mask for the pin/register
+*    BitsPerPin: How many bits are used per pin in the specific register 
+*    Value:      The value to which the pin should be set
+
+*  Return value
+*    The previous value of the register/pin bit field for later restoration
+*/
+static U8 _SetReg(U32 Port, U32 Offset, U8 Pin, U8 Mask, U8 BitsPerPin, U8 Value) {
+  U32 RegAddr;
+  U32 PinShift;
+  U32 v;
+  U8  vRestore;
+  
+  RegAddr   = Port + Offset;                   // Determine register address
+  PinShift  = Pin * BitsPerPin;                // n bits per pin
+  v         = JLINK_MEM_ReadU32(RegAddr);
+  vRestore  = (v >> PinShift) & Mask;          // Remember value for restore
+  v        &= ~(Mask << PinShift);             // Mask bit field
+  v        |= (Value << PinShift);             // Set bits
+  JLINK_MEM_WriteU32(RegAddr, v);
+  return vRestore;
+}
+
+/*********************************************************************
+*
+*       _ChangePin
+*
+*  Function description
+*    Depending on bIsInit parameter either initializes or restores a pin by 
+*    modifying its corresponding registers.
+*
+*  Parameters
+*    bIsInit:  Determines if the pin shall be initialized or restored
+*    Pin:      Pin information (Port, Alternate function, Pin number)
+*    pAFR:     Restore area for AFR register information
+*    pMODER:   Restore area for MODER register information
+*    pOSPEEDR: Restore area for OSPEEDR register information  
+*    pOTYPER:  Restore area for OTYPER register information 
+*    pPUPDR:   Restore area for PUPDR register information
+*
+*  Return value
+*    0 == OK
+*   -1 == Error
+*/
+static int _ChangePin(U8 bIsInit, U32 PinInfo, U8* pAFR, U8* pMODER, U8* pOSPEEDR, U8* pOTYPER, U8* pPUPDR) {
+  U32 iPIOUnit;
+  U32 iPin;
+  U32 PortBase;
+  U8  InvalidMarker;
+  U8  iAF;
+  U32 OffsetAFR;
+
+  InvalidMarker = (PinInfo >> 31) & 1;
+  if (InvalidMarker) {
+    JLINK_SYS_Report("Error: Invalid pin detected");
+    return -1;
+  }
+  iPin     = (PinInfo >> 0) & 0xF;
+  iPIOUnit = (PinInfo >> 4) & 0xF;
+  iAF      = (PinInfo >> 8) & 0xF;
+  PortBase = _aGPIOAddr[iPIOUnit];
+  if (iPin < 8) {                                // AF low registers for pins < 8
+    OffsetAFR = _GPIOx_AFRL;
+  } else {                                      // AF high registers for pins >= 8
+    OffsetAFR = _GPIOx_AFRH;
+  }
+  if (bIsInit) {
+    //
+    // Initialize pin, remember previous settings
+    //
+    *pMODER   = _SetReg(PortBase, _GPIOx_MODER,   iPin,         _MASK_MODER,   _BITSPERPIN_MODER,   _GPIOx_MODER_AF);
+    *pOSPEEDR = _SetReg(PortBase, _GPIOx_OSPEEDR, iPin,         _MASK_OSPEEDR, _BITSPERPIN_OSPEEDR, _GPIOx_OSPEEDR_VERY_HIGH);
+    *pOTYPER  = _SetReg(PortBase, _GPIOx_OTYPER,  iPin,         _MASK_OTYPER,  _BITSPERPIN_OTYPER,  _GPIOx_OTYPER_PUSH_PULL);
+    *pPUPDR   = _SetReg(PortBase, _GPIOx_PUPDR,   iPin,         _MASK_PUPDR,   _BITSPERPIN_PUPDR,   _GPIOx_PUPDR_NONE);
+    *pAFR     = _SetReg(PortBase, OffsetAFR,      (iPin & 0x7), _MASK_AFR,     _BITSPERPIN_AFR,     iAF);          // Since AFR register uses four bits per pin, only use the lower three bits for AFR
+  } else {
+    //
+    // Restore previously saved values
+    //
+    *pMODER   = _SetReg(PortBase, _GPIOx_MODER,   iPin,         _MASK_MODER,   _BITSPERPIN_MODER,   *pMODER);
+    *pOSPEEDR = _SetReg(PortBase, _GPIOx_OSPEEDR, iPin,         _MASK_OSPEEDR, _BITSPERPIN_OSPEEDR, *pOSPEEDR);
+    *pOTYPER  = _SetReg(PortBase, _GPIOx_OTYPER,  iPin,         _MASK_OTYPER,  _BITSPERPIN_OTYPER,  *pOTYPER);
+    *pPUPDR   = _SetReg(PortBase, _GPIOx_PUPDR,   iPin,         _MASK_PUPDR,   _BITSPERPIN_PUPDR,   *pPUPDR);
+    *pAFR     = _SetReg(PortBase, OffsetAFR,      (iPin & 0x7), _MASK_AFR,     _BITSPERPIN_AFR,     *pAFR);        // Since AFR register uses four bits per pin, only use the lower three bits for AFR
+  }
+  return 0;
+}
+
+/*********************************************************************
+*
+*       _InitClocks
+*/
+static int _InitClocks(void) {
+  U32 GPIOEnableMask;
+  U32 v;
+  
+  GPIOEnableMask  = 0
+                  | (1 << ((_OCTOSPIM_P1_CLK >> 4) & 0xF)) // Check which GPIO port must be clocked for CLK
+                  | (1 << ((_OCTOSPIM_P1_NCS >> 4) & 0xF)) // Check which GPIO port must be clocked for NCS
+                  ;
+  if ((_FSEL == 1) || (_DQM == 1)) {
+    GPIOEnableMask |= (1 << ((_OCTOSPIM_P1_IO0 >> 4) & 0xF)) // Check which GPIO port must be clocked for IO0
+                   |  (1 << ((_OCTOSPIM_P1_IO1 >> 4) & 0xF)) // Check which GPIO port must be clocked for IO1
+                   |  (1 << ((_OCTOSPIM_P1_IO2 >> 4) & 0xF)) // Check which GPIO port must be clocked for IO2
+                   |  (1 << ((_OCTOSPIM_P1_IO3 >> 4) & 0xF)) // Check which GPIO port must be clocked for IO3
+                   ;
+  }
+  if ((_FSEL == 2) || (_DQM == 1)) {
+    GPIOEnableMask |= (1 << ((_OCTOSPIM_P1_IO4 >> 4) & 0xF)) // Check which GPIO port must be clocked for IO4
+                   |  (1 << ((_OCTOSPIM_P1_IO5 >> 4) & 0xF)) // Check which GPIO port must be clocked for IO5
+                   |  (1 << ((_OCTOSPIM_P1_IO6 >> 4) & 0xF)) // Check which GPIO port must be clocked for IO6
+                   |  (1 << ((_OCTOSPIM_P1_IO7 >> 4) & 0xF)) // Check which GPIO port must be clocked for IO7
+                   ;
+  }
+  //
+  // Enable clocks according to GPIOEnableMask
+  //
+  v  = JLINK_MEM_ReadU32(_REG_RCC_AHB4ENR);
+  vREG_RCC_AHB4ENR = v;
+  v |= GPIOEnableMask;
+  JLINK_MEM_WriteU32(_REG_RCC_AHB4ENR, v);
+  return 0;
+}
+
+/*********************************************************************
+*
+*       _InitOCTOSPIController
+*/
+static int _InitOCTOSPIController(void) {
+  U32 v;
+  //
+  // Select RCC_HCLK3 for OCTOSPI
+  //
+  vREG_RCC_D1CCIPR = JLINK_MEM_ReadU32(_REG_RCC_D1CCIPR);
+  v  = JLINK_MEM_ReadU32(_REG_RCC_D1CCIPR);
+  v &= ~(3 << 4);
+  JLINK_MEM_WriteU32(_REG_RCC_D1CCIPR, v);
+  //
+  // Setup clocks
+  //
+  vREG_RCC_AHB3ENR = JLINK_MEM_ReadU32(_REG_RCC_AHB3ENR);
+  v  = vREG_RCC_AHB3ENR;
+  v |= (1 << _REG_RCC_AHB3ENR_OCTOSPI_SHIFT);
+  JLINK_MEM_WriteU32(_REG_RCC_AHB3ENR, v);
+  //
+  // Reset OCTOSPI interface
+  //
+  v = JLINK_MEM_ReadU32(_REG_RCC_AHB3RSTR);
+  v |= (1 << _REG_RCC_AHB3RSTR_OCTOSPI_SHIFT);
+  JLINK_MEM_WriteU32(_REG_RCC_AHB3RSTR, v);
+  v &= ~(1 << _REG_RCC_AHB3RSTR_OCTOSPI_SHIFT);
+  JLINK_MEM_WriteU32(_REG_RCC_AHB3RSTR, v);
+  //
+  // Setup FSEL/DQM
+  //
+  v  = JLINK_MEM_ReadU32(_REG_OCTOSPI_CR);
+  vREG_OCTOSPI_CR = v;
+  if (_DQM == 0) {
+    v &= ~(1 << _OCTOSPI_CR_DQM_SHIFT);
+  } else if (_DQM == 1) {
+    v |= (1 << _OCTOSPI_CR_DQM_SHIFT);
+  } else {
+    JLINK_SYS_Report("Error: Invalid value for _DQM");
+    return -1;
+  }
+  if (_FSEL == 1) {
+    v &= ~(1 << _OCTOSPI_CR_FSEL_SHIFT);
+  } else if (_FSEL == 2) {
+    v |= (1 << _OCTOSPI_CR_FSEL_SHIFT);
+  } else {
+    JLINK_SYS_Report("Error: Invalid value for _FSEL");
+    return -1;
+  }
+  JLINK_MEM_WriteU32(_REG_OCTOSPI_CR, v);
+  return 0;
+}
+
+/*********************************************************************
+*
+*       Global functions
+*
+**********************************************************************
+*/
+
+/*********************************************************************
+*
+*       FLASH_Prepare()
+*
+*  Function description
+*    Configures the pins with the pin specified config.
+*
+*  Return value
+*    >= 0  O.K.
+*    <  0  Error
+*
+*  Notes
+*    (1) DLL expects target CPU to be halted / in debug mode, when leaving this function
+*    (2) May use MEM_ API functions
+*/
+// int FLASH_Prepare(void) { // We use AfterResetTarget() for debug purposes. For integration of the flash loader with J-Link, FLASH_Prepare must be used.
+int AfterResetTarget(void) {
+  int r;
+  
+  r = 0;
+  //
+  // Initialize clocks
+  //
+  r = _InitClocks();
+  if (r) {
+    goto Done;
+  }
+  //
+  // Initialize OCTOSPI controller
+  //
+  r = _InitOCTOSPIController();
+  if (r) {
+    goto Done;
+  }
+  //
+  // Initialize OSPI_CLK
+  //
+  r = _ChangePin(1, _OCTOSPIM_P1_CLK, &vCLK_AFR, &vCLK_MODER, &vCLK_OSPEEDR, &vCLK_OTYPER, &vCLK_PUPDR);
+  if (r) {
+    goto Done;
+  }
+  //
+  // Initialize OCTOSPIM_P1_NCS
+  //
+  r  = _ChangePin(1, _OCTOSPIM_P1_NCS, &vNCS_AFR, &vNCS_MODER, &vNCS_OSPEEDR, &vNCS_OTYPER, &vNCS_PUPDR);
+  if (r) {
+    goto Done;
+  }
+  if ((_FSEL == 1) || (_DQM == 1)) {
+    //
+    // Initialize OCTOSPIM_P1_IO0-3
+    //
+    r |= _ChangePin(1, _OCTOSPIM_P1_IO0, &vIO0_AFR, &vIO0_MODER, &vIO0_OSPEEDR, &vIO0_OTYPER, &vIO0_PUPDR);
+    r |= _ChangePin(1, _OCTOSPIM_P1_IO1, &vIO0_AFR, &vIO1_MODER, &vIO1_OSPEEDR, &vIO1_OTYPER, &vIO1_PUPDR);
+    r |= _ChangePin(1, _OCTOSPIM_P1_IO2, &vIO0_AFR, &vIO2_MODER, &vIO2_OSPEEDR, &vIO2_OTYPER, &vIO2_PUPDR);
+    r |= _ChangePin(1, _OCTOSPIM_P1_IO3, &vIO0_AFR, &vIO3_MODER, &vIO3_OSPEEDR, &vIO3_OTYPER, &vIO3_PUPDR);
+    if (r) {
+      goto Done;
+    }
+  }
+  if ((_FSEL == 2) || (_DQM == 1)) {
+    //
+    // Initialize OCTOSPIM_P1_IO4-7
+    //
+    r |= _ChangePin(1, _OCTOSPIM_P1_IO4, &vIO4_AFR, &vIO4_MODER, &vIO4_OSPEEDR, &vIO4_OTYPER, &vIO4_PUPDR);
+    r |= _ChangePin(1, _OCTOSPIM_P1_IO5, &vIO5_AFR, &vIO5_MODER, &vIO5_OSPEEDR, &vIO5_OTYPER, &vIO5_PUPDR);
+    r |= _ChangePin(1, _OCTOSPIM_P1_IO6, &vIO6_AFR, &vIO6_MODER, &vIO6_OSPEEDR, &vIO6_OTYPER, &vIO6_PUPDR);
+    r |= _ChangePin(1, _OCTOSPIM_P1_IO7, &vIO7_AFR, &vIO7_MODER, &vIO7_OSPEEDR, &vIO7_OTYPER, &vIO7_PUPDR);
+    if (r) {
+      goto Done;
+    }
+  }
+Done:
+  return r;
+}
+
+/*********************************************************************
+*
+*       FLASH_Restore()
+*
+*  Function description
+*    Restores the pins and clock settings.
+*
+*  Return value
+*    >= 0  O.K.
+*    <  0  Error
+*
+*  Notes
+*    (1) DLL expects target CPU to be halted / in debug mode, when leaving this function
+*    (2) May use MEM_ API functions
+*/
+int FLASH_Restore(void) {
+  //
+  // Restore pins
+  //
+  _ChangePin(0, _OCTOSPIM_P1_CLK, &vCLK_AFR, &vCLK_MODER, &vCLK_OSPEEDR, &vCLK_OTYPER, &vCLK_PUPDR);
+  _ChangePin(0, _OCTOSPIM_P1_NCS, &vNCS_AFR, &vNCS_MODER, &vNCS_OSPEEDR, &vNCS_OTYPER, &vNCS_PUPDR);
+  if ((_FSEL == 1) || (_DQM == 1)) {
+    _ChangePin(0, _OCTOSPIM_P1_IO0, &vIO0_AFR, &vIO0_MODER, &vIO0_OSPEEDR, &vIO0_OTYPER, &vIO0_PUPDR);
+    _ChangePin(0, _OCTOSPIM_P1_IO1, &vIO0_AFR, &vIO1_MODER, &vIO1_OSPEEDR, &vIO1_OTYPER, &vIO1_PUPDR);
+    _ChangePin(0, _OCTOSPIM_P1_IO2, &vIO0_AFR, &vIO2_MODER, &vIO2_OSPEEDR, &vIO2_OTYPER, &vIO2_PUPDR);
+    _ChangePin(0, _OCTOSPIM_P1_IO3, &vIO0_AFR, &vIO3_MODER, &vIO3_OSPEEDR, &vIO3_OTYPER, &vIO3_PUPDR);
+  }
+  if ((_FSEL == 2) || (_DQM == 1)) {
+    _ChangePin(0, _OCTOSPIM_P1_IO4, &vIO4_AFR, &vIO4_MODER, &vIO4_OSPEEDR, &vIO4_OTYPER, &vIO4_PUPDR);
+    _ChangePin(0, _OCTOSPIM_P1_IO5, &vIO5_AFR, &vIO5_MODER, &vIO5_OSPEEDR, &vIO5_OTYPER, &vIO5_PUPDR);
+    _ChangePin(0, _OCTOSPIM_P1_IO6, &vIO6_AFR, &vIO6_MODER, &vIO6_OSPEEDR, &vIO6_OTYPER, &vIO6_PUPDR);
+    _ChangePin(0, _OCTOSPIM_P1_IO7, &vIO7_AFR, &vIO7_MODER, &vIO7_OSPEEDR, &vIO7_OTYPER, &vIO7_PUPDR);
+  }
+  //
+  // Restore clocks, OCTOSPI control register
+  //
+  JLINK_MEM_WriteU32(_REG_RCC_AHB4ENR, vREG_RCC_AHB4ENR);
+  JLINK_MEM_WriteU32(_REG_OCTOSPI_CR,  vREG_OCTOSPI_CR);
+  JLINK_MEM_WriteU32(_REG_RCC_D1CCIPR, vREG_RCC_D1CCIPR);
+  JLINK_MEM_WriteU32(_REG_RCC_AHB3ENR, vREG_RCC_AHB3ENR);
+  return 0;
+}
+
+/*************************** end of file ****************************/

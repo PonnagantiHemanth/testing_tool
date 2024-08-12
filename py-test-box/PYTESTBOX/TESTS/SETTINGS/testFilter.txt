@@ -1,0 +1,7 @@
+# PYTESTBOX AUTO_TESTS
+autotests
+# PYTESTBOX PRODUCT
+pytestbox.device
+pytestbox.timings
+# PYTESTBOX RECEIVER
+pytestbox.receiver

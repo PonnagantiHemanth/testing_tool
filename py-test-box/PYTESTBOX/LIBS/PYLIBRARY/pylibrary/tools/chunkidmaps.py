@@ -1,0 +1,523 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# ------------------------------------------------------------------------------
+# Python Test Harness
+# ------------------------------------------------------------------------------
+"""
+:package: pylibrary.tools.chunkidmaps
+:brief: Chunk ID maps associated to projects
+:author: Stanislas Cottard <scottard@logitech.com>
+:date: 2019/10/17
+"""
+# ------------------------------------------------------------------------------
+# imports
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# implementation
+# ------------------------------------------------------------------------------
+CHUNK_ID_MAP_NRF52 = {
+    "NVS_CHUNK_METHOD": True,
+    "NVS_WORD_SIZE": 4,
+
+    "NVS_INVALID_CHUNK_ID": 0x00,
+    "NVS_ACTIVE_BANK_ID": 0x01,
+    "NVS_EMPTY_CHUNK_ID": 0xFF,
+
+    # Important headers: [chunkID, chunkLength, chunkCRC]
+    "ACTIVE_BANK_HDR": [0x01, 0x00, 0x2E3E],
+    "TEMP_BANK_HDR": [0xFF, 0x00, 0x2E3E],
+    "INVALID_BANK_HDR": [0x00, 0x00, 0x0000],
+}
+
+CHUNK_ID_MAP_QUARK = {
+    **CHUNK_ID_MAP_NRF52,
+
+    # Common identifiers
+    "NVS_SERIAL_NB_ID": 0x0002,
+    "NVS_DEVICE_NAME_ID": 0x0003,
+    "NVS_DEVICE_FRIENDLY_NAME_ID": 0x0004,
+    "NVS_TDE_MFG_ACCESS_ID": 0x0005,
+    "NVS_BATT_CALIBRATION_ID": 0x0006,
+    "NVS_LASER_CFG_ID": 0x0007,
+    "NVS_ALS_CALIBRATION_ID": 0x0008,
+
+    # 0x1861-0x1004 battery multi sourcing support
+    "NVS_BATT_SOURCE_IDX_ID": 0x000B,
+    "NVS_BLE_PRO_PRE_PAIRING_ID_0": 0x000C,
+    "NVS_BLE_PRO_PRE_PAIRING_ID_1": 0x000D,
+    "NVS_BLE_PRO_PRE_PAIRING_ID_2": 0x000E,
+    "NVS_BLE_PRO_PRE_PAIRING_ID_3": 0x000F,
+
+    # Triaxis magnetic field sensor MLX90393
+    "NVS_MLX903_CALIBRATION_ID": 0x00F0,
+
+    # Triaxis magnetic field sensor IQS624
+    "NVS_IQS624_CALIBRATION_ID": 0x00F1,
+
+    # eQuad identifiers (ranges: 0xXX10 .. 0xXX27, 0xXX48 .. 0xXX4F)
+    "NVS_EQUAD_H0_ADDR_ID": 0x0110,
+    "NVS_EQUAD_H1_ADDR_ID": 0x0111,
+    "NVS_EQUAD_H2_ADDR_ID": 0x0112,
+    "NVS_EQUAD_H3_ADDR_ID": 0x0113,
+    "NVS_EQUAD_H4_ADDR_ID": 0x0114,
+    "NVS_EQUAD_H5_ADDR_ID": 0x0115,
+    "NVS_EQUAD_H6_ADDR_ID": 0x0116,
+    "NVS_EQUAD_H7_ADDR_ID": 0x0117,
+    "NVS_EQUAD_H0_ATTR_ACCEPTED_ID": 0x0118,
+    "NVS_EQUAD_H1_ATTR_ACCEPTED_ID": 0x0119,
+    "NVS_EQUAD_H2_ATTR_ACCEPTED_ID": 0x011A,
+    "NVS_EQUAD_H3_ATTR_ACCEPTED_ID": 0x011B,
+    "NVS_EQUAD_H4_ATTR_ACCEPTED_ID": 0x011C,
+    "NVS_EQUAD_H5_ATTR_ACCEPTED_ID": 0x011D,
+    "NVS_EQUAD_H6_ATTR_ACCEPTED_ID": 0x011E,
+    "NVS_EQUAD_H7_ATTR_ACCEPTED_ID": 0x011F,
+    "NVS_EQUAD_H0_AES_KEY_ID": 0x0120,
+    "NVS_EQUAD_H1_AES_KEY_ID": 0x0121,
+    "NVS_EQUAD_H2_AES_KEY_ID": 0x0122,
+    "NVS_EQUAD_H3_AES_KEY_ID": 0x0123,
+    "NVS_EQUAD_H4_AES_KEY_ID": 0x0124,
+    "NVS_EQUAD_H5_AES_KEY_ID": 0x0125,
+    "NVS_EQUAD_H6_AES_KEY_ID": 0x0126,
+    "NVS_EQUAD_H7_AES_KEY_ID": 0x0127,
+
+    "NVS_EQUAD_H0_PAIRING_SRC_ID": 0x0148,
+    "NVS_EQUAD_H1_PAIRING_SRC_ID": 0x0149,
+    "NVS_EQUAD_H2_PAIRING_SRC_ID": 0x014A,
+    "NVS_EQUAD_H3_PAIRING_SRC_ID": 0x014B,
+    "NVS_EQUAD_H4_PAIRING_SRC_ID": 0x014C,
+    "NVS_EQUAD_H5_PAIRING_SRC_ID": 0x014D,
+    "NVS_EQUAD_H6_PAIRING_SRC_ID": 0x014E,
+    "NVS_EQUAD_H7_PAIRING_SRC_ID": 0x014F,
+
+    # BLE identifiers (range: 0xXX28 .. 0xXX40)
+    "NVS_BLE_BOND_ID_0": 0x0128,
+    "NVS_BLE_BOND_ID_1": 0x0129,
+    "NVS_BLE_BOND_ID_2": 0x012A,
+    "NVS_BLE_BOND_ID_3": 0x012B,
+    "NVS_BLE_BOND_ID_4": 0x012C,
+    "NVS_BLE_BOND_ID_5": 0x012D,
+    "NVS_BLE_BOND_ID_6": 0x012E,
+    "NVS_BLE_BOND_ID_7": 0x012F,
+    "NVS_BLE_SYS_ATTR_SYS_SRVCS_ID_0": 0x0130,
+    "NVS_BLE_SYS_ATTR_SYS_SRVCS_ID_1": 0x0131,
+    "NVS_BLE_SYS_ATTR_SYS_SRVCS_ID_2": 0x0132,
+    "NVS_BLE_SYS_ATTR_SYS_SRVCS_ID_3": 0x0133,
+    "NVS_BLE_SYS_ATTR_SYS_SRVCS_ID_4": 0x0134,
+    "NVS_BLE_SYS_ATTR_SYS_SRVCS_ID_5": 0x0135,
+    "NVS_BLE_SYS_ATTR_SYS_SRVCS_ID_6": 0x0136,
+    "NVS_BLE_SYS_ATTR_SYS_SRVCS_ID_7": 0x0137,
+    "NVS_BLE_SYS_ATTR_USR_SRVCS_ID_0": 0x0138,
+    "NVS_BLE_SYS_ATTR_USR_SRVCS_ID_1": 0x0139,
+    "NVS_BLE_SYS_ATTR_USR_SRVCS_ID_2": 0x013A,
+    "NVS_BLE_SYS_ATTR_USR_SRVCS_ID_3": 0x013B,
+    "NVS_BLE_SYS_ATTR_USR_SRVCS_ID_4": 0x013C,
+    "NVS_BLE_SYS_ATTR_USR_SRVCS_ID_5": 0x013D,
+    "NVS_BLE_SYS_ATTR_USR_SRVCS_ID_6": 0x013E,
+    "NVS_BLE_SYS_ATTR_USR_SRVCS_ID_7": 0x013F,
+    "NVS_BLE_LAST_GAP_ADDR_USED": 0x0140,
+}
+
+# https://goldenpass.logitech.com:8443/plugins/gitiles/ccp_fw/quark/+/refs/heads/master/config/nvs_cfg.h
+# https://goldenpass.logitech.com:8443/plugins/gitiles/ccp_fw/quark_gaming_mice/+/refs/heads/master/config/nvs_cfg.h
+CHUNK_ID_MAP_QUARK_CORE = {
+    **CHUNK_ID_MAP_QUARK,
+
+    # For backward capability(before 2020), it's not defined in current platform codeline
+    "NVS_X1E01_CONN_CNTR_ID": 0x0250,
+
+    # Boot-loader/application state identifiers
+    "NVS_DFU_ID": 0x0260,
+    "NVS_MBR_STATUS_ID": 0x0261,
+    "NVS_BTLDR_CONNECT_ID": 0x0262,
+    "NVS_CONNECT_ID": 0x0263,
+    "NVS_APP_SECUR_LVL_ID": 0x0264,
+    "NVS_SD_SECUR_LVL_ID": 0x0265,
+    "NVS_DFU_OUT_OF_RECOVERY_ID": 0x0266,
+    "NVS_FACT_SETTINGS_REQUEST_ID": 0x0267,
+    "NVS_FORCE_PAIRING_ID": 0x0268,
+
+    # Miscellaneous identifiers
+    "NVS_X1E02_STATE_ID": 0x026C,
+
+    # 0x1814
+    "NVS_1814_COOKIES_ID": 0x0271,
+
+    # 0x1A00
+    "NVS_PERSISTENT_PRESENTER_SETTINGS": 0x0272,
+
+    # 0x1002
+    "NVS_1002_CABLE_MODE_ID": 0x0273,
+
+    # 0x2110
+    "NVS_ROLLER_ID": 0x0274,
+
+    # 0x1815
+    "NVS_HOSTSINFO_H0_INFO_ID": 0x0280,
+    "NVS_HOSTSINFO_H0_DESCR_ID": 0x0281,
+    "NVS_HOSTSINFO_H1_INFO_ID": 0x0282,
+    "NVS_HOSTSINFO_H1_DESCR_ID": 0x0283,
+    "NVS_HOSTSINFO_H2_INFO_ID": 0x0284,
+    "NVS_HOSTSINFO_H2_DESCR_ID": 0x0285,
+    "NVS_HOSTSINFO_H3_INFO_ID": 0x0286,
+    "NVS_HOSTSINFO_H3_DESCR_ID": 0x0287,
+    "NVS_HOSTSINFO_H4_INFO_ID": 0x0288,
+    "NVS_HOSTSINFO_H4_DESCR_ID": 0x0289,
+    "NVS_HOSTSINFO_H5_INFO_ID": 0x028A,
+    "NVS_HOSTSINFO_H5_DESCR_ID": 0x028B,
+    "NVS_HOSTSINFO_H6_INFO_ID": 0x028C,
+    "NVS_HOSTSINFO_H6_DESCR_ID": 0x028D,
+    "NVS_HOSTSINFO_H7_INFO_ID": 0x028E,
+    "NVS_HOSTSINFO_H7_DESCR_ID": 0x028F,
+
+    # 0x1807
+    "NVS_EXTENDED_MODEL_ID": 0x0290,
+    "NVS_KEYBOARD_INTERNATIONAL_LAYOUT_ID": 0x0291,
+    "NVS_EQUAD_SHORT_NAME_ID": 0x0292,
+    "NVS_BLE_AD_OUTPUT_POWER_ID": 0x0293,
+    "NVS_BLE_GAP_APP_NAME_ID": 0x0294,
+    "NVS_SERIAL_NUMBER_ID": 0x0295,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE0_ID": 0x0296,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE1_ID": 0x0297,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE2_ID": 0x0298,
+    "NVS_EQUAD_ID_ID": 0x0299,
+    "NVS_USB_VID_ID": 0x029A,
+    "NVS_USB_BTLDR_PID_ID": 0x029B,
+    "NVS_USB_APP_PID_ID": 0x029C,
+    "NVS_USB_MANUF_STRG_ID": 0x029D,
+    "NVS_USB_BTLDR_PROD_STRG_ID": 0x029E,
+    "NVS_USB_APP_PROD_STRG_ID": 0x029F,
+
+    "NVS_BLE_GAP_BL_ADV_NAME_SIZE_ID": 0x02D0,
+    "NVS_BLE_GAP_APP_ADV_NAME_SIZE_ID": 0x02D1,
+    "NVS_BLE_GAP_BL_SR_NAME_SIZE_ID": 0x02D2,
+    "NVS_BLE_GAP_APP_SR_NAME_SIZE_ID": 0x02D3,
+    "NVS_BLE_DIS_VID_ID": 0x02D4,
+    "NVS_BLE_DIS_BTLDR_PID_ID": 0x02D5,
+    "NVS_BLE_DIS_APP_PID_ID": 0x02D6,
+    "NVS_BLE_DIS_MANUF_NAME_ID": 0x02D7,
+    "NVS_BLE_DIS_BTLDR_MODEL_NB_ID": 0x02D8,
+    "NVS_BLE_DIS_APP_MODEL_NB_ID": 0x02D9,
+    "NVS_SW_EXTRA_INFO_ID": 0x02DA,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE3_ID": 0x02DB,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE4_ID": 0x02DC,
+    "NVS_DISABLE_EASY_PAIRING_ID": 0x02DD,
+    "NVS_HW_VERSION_ID": 0x02DE,
+
+    # 0x0021
+    "NVS_X0021_32BYTE_ID_ID": 0x02A0,
+
+    # Triaxis magnetic field sensor MLX90393
+    "NVS_MLX90A_CALIBRATION_0_ID": 0x02A1,
+    "NVS_MLX90A_CALIBRATION_1_ID": 0x02A2,
+    "NVS_MLX90A_CALIBRATION_2_ID": 0x02A3,
+    "NVS_MLX90A_CALIBRATION_3_ID": 0x02A4,
+    "NVS_MLX90A_CALIBRATION_4_ID": 0x02A5,
+    "NVS_MLX90A_CALIBRATION_5_ID": 0x02A6,
+    "NVS_MLX90A_CALIBRATION_6_ID": 0x02A7,
+    "NVS_MLX90A_CALIBRATION_7_ID": 0x02A8,
+
+    # dpi value state
+    "NVS_DPI_ID": 0x02AB,
+
+    # 0x4531
+    "NVS_MULTIOS_HOST0_ID": 0x02AC,
+    "NVS_MULTIOS_HOST1_ID": 0x02AD,
+    "NVS_MULTIOS_HOST2_ID": 0x02AE,
+    "NVS_MULTIOS_HOST3_ID": 0x02AF,
+
+    # 0x40a3
+    "NVS_FN_INVERSION_HOST0_ID": 0x02B0,
+    "NVS_FN_INVERSION_HOST1_ID": 0x02B1,
+    "NVS_FN_INVERSION_HOST2_ID": 0x02B2,
+    "NVS_FN_INVERSION_HOST3_ID": 0x02B3,
+
+    # Fix later (Suresh Thiyagarajan): Fill the right number once available in nvs_cfg.h
+    "NVS_PART_NUMBER_ID": None,
+    "NVS_REGULATORY_MODEL_NUMBER_ID": None,
+}
+
+CHUNK_ID_MAP_QUARK_GAMING = {
+    **CHUNK_ID_MAP_QUARK,
+
+    # RGB LED calibration data
+    "NVS_RGB_CAL_PRIM_ZONE_ID": 0x0009,
+    "NVS_RGB_CAL_LOGO_ZONE_ID": 0x000A,
+
+    # For backward capability(before 2020), it's not defined in current platform codeline
+    "NVS_X1E01_CONN_CNTR_ID": 0x0350,
+
+    # Boot-loader/application state identifiers
+    "NVS_DFU_ID": 0x0360,
+    "NVS_MBR_STATUS_ID": 0x0361,
+    "NVS_BTLDR_CONNECT_ID": 0x0362,
+    "NVS_CONNECT_ID": 0x0363,
+    "NVS_APP_SECUR_LVL_ID": 0x0364,
+    "NVS_SD_SECUR_LVL_ID": 0x0365,
+    "NVS_DFU_OUT_OF_RECOVERY_ID": 0x0366,
+    "NVS_FACT_SETTINGS_REQUEST_ID": 0x0367,
+    "NVS_FORCE_PAIRING_ID": 0x0368,
+
+    # Miscellaneous identifiers
+    "NVS_X1E02_STATE_ID": 0x036C,
+
+    # Prod specific identifiers
+    "NVS_PROFILE_ID": 0x0370,
+
+    # 0x1814
+    "NVS_1814_COOKIES_ID": 0x0371,
+
+    # 0x8090
+    "NVS_8090_PWR_MODE_ID": 0x0372,
+    "NVS_8090_FORCE_MODE_ID": 0x0373,
+
+    # 0x2110
+    "NVS_ROLLER_ID": 0x0374,
+
+    # RGB LED configuration Data
+    "NVS_LED_BOOTUP_ID": 0x0380,
+    "NVS_LED_DEMO_ID": 0x0381,
+    "NVS_PRIM_CONFIG_ID": 0x0382,
+    "NVS_GLOGO_CONFIG_ID": 0x0383,
+    "NVS_ONBOARD_EFCT_0_STATUS_ID": 0x0384,
+    "NVS_ONBOARD_EFCT_1_STATUS_ID": 0x0385,
+
+    # 0x1807
+    "NVS_EXTENDED_MODEL_ID": 0x0390,
+    "NVS_KEYBOARD_INTERNATIONAL_LAYOUT_ID": 0x0391,
+    "NVS_EQUAD_SHORT_NAME_ID": 0x0392,
+    "NVS_BLE_AD_OUTPUT_POWER_ID": 0x0393,
+    "NVS_BLE_GAP_APP_NAME_ID": 0x0394,
+    "NVS_SERIAL_NUMBER_ID": 0x0395,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE0_ID": 0x0396,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE1_ID": 0x0397,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE2_ID": 0x0398,
+    "NVS_EQUAD_ID_ID": 0x0399,
+    "NVS_USB_VID_ID": 0x039A,
+    "NVS_USB_BTLDR_PID_ID": 0x039B,
+    "NVS_USB_APP_PID_ID": 0x039C,
+    "NVS_USB_MANUF_STRG_ID": 0x039D,
+    "NVS_USB_BTLDR_PROD_STRG_ID": 0x039E,
+    "NVS_USB_APP_PROD_STRG_ID": 0x039F,
+
+    "NVS_BLE_GAP_BL_ADV_NAME_SIZE_ID": 0x03D0,
+    "NVS_BLE_GAP_APP_ADV_NAME_SIZE_ID": 0x03D1,
+    "NVS_BLE_GAP_BL_SR_NAME_SIZE_ID": 0x03D2,
+    "NVS_BLE_GAP_APP_SR_NAME_SIZE_ID": 0x03D3,
+    "NVS_BLE_DIS_VID_ID": 0x03D4,
+    "NVS_BLE_DIS_BTLDR_PID_ID": 0x03D5,
+    "NVS_BLE_DIS_APP_PID_ID": 0x03D6,
+    "NVS_BLE_DIS_MANUF_NAME_ID": 0x03D7,
+    "NVS_BLE_DIS_BTLDR_MODEL_NB_ID": 0x03D8,
+    "NVS_BLE_DIS_APP_MODEL_NB_ID": 0x03D9,
+    "NVS_SW_EXTRA_INFO_ID": 0x03DA,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE3_ID": 0x03DB,
+    "NVS_RGB_LEDBIN_BACKUP_ZONE4_ID": 0x03DC,
+    "NVS_DISABLE_EASY_PAIRING_ID": 0x03DD,
+    "NVS_HW_VERSION_ID": 0x03DE,
+
+    # 0x0021
+    "NVS_X0021_32BYTE_ID_ID": 0x03A0,
+
+    # 0x4531
+    "NVS_MULTIOS_HOST0_ID": 0x03AC,
+    "NVS_MULTIOS_HOST1_ID": 0x03AD,
+    "NVS_MULTIOS_HOST2_ID": 0x03AE,
+    "NVS_MULTIOS_HOST3_ID": 0x03AF,
+
+    # Chunk present on NPIs (e.g. Topaz, Octane, Cinderella) but not defined in platform codeline
+    "NVS_KBD_MASK_TABLE_ID": 0x0020,
+    "NVS_LED_BRIGHTNESS_ID": 0x0387,
+
+    # Fix Later (Suresh Thiyagarajan): Fill the right number once available in nvs_cfg.h
+    "NVS_PART_NUMBER_ID": None,
+    "NVS_REGULATORY_MODEL_NUMBER_ID": None,
+}
+
+CHUNK_ID_MAP_DEVICE = (CHUNK_ID_MAP_QUARK_CORE, CHUNK_ID_MAP_QUARK_GAMING)
+
+CHUNK_ID_MAP_RECEIVER = {
+    **CHUNK_ID_MAP_NRF52,
+
+    # Common identifiers
+    "NVS_SERIAL_NB_ID": 0x0002,
+    "NVS_VERSION_ID": 0x0003,
+    "NVS_RECEIVER_ID": 0x0004,
+    "NVS_DEVICE_NAME_ID": 0x0005,
+    "NVS_DEVICE_FRIENDLY_NAME_ID": 0x0006,
+    "NVS_TDE_MFG_ACCESS_ID": 0x0007,
+    "NVS_XEE_DEACT_CNTR_ID": 0x0008,
+
+    # Pairing info identifiers
+    "NVS_EQUAD_PAIRING_ID": 0x0110,
+
+    # BLE identifiers
+    "NVS_BLE_BOND_ID_0": 0x0120,
+    "NVS_BLE_BOND_ID_1": 0x0121,
+    "NVS_BLE_BOND_ID_2": 0x0122,
+    "NVS_BLE_BOND_ID_3": 0x0123,
+    "NVS_BLE_BOND_ID_4": 0x0124,
+    "NVS_BLE_BOND_ID_5": 0x0125,
+    "NVS_BLE_BOND_ID_6": 0x0126,
+    "NVS_BLE_BOND_ID_7": 0x0127,
+    "NVS_BLE_BOND_INFO_ID_V0_0": 0x0128,
+    "NVS_BLE_BOND_INFO_ID_V0_1": 0x0129,
+    "NVS_BLE_BOND_INFO_ID_V0_2": 0x012A,
+    "NVS_BLE_BOND_INFO_ID_V0_3": 0x012B,
+    "NVS_BLE_BOND_INFO_ID_V0_4": 0x012C,
+    "NVS_BLE_BOND_INFO_ID_V0_5": 0x012D,
+    "NVS_BLE_BOND_INFO_ID_V0_6": 0x012E,
+    "NVS_BLE_BOND_INFO_ID_V0_7": 0x012F,
+    "NVS_BLE_BOND_ID_V0_MAX": 0x012F,
+    "NVS_BLE_SYS_INFO_ID_0": 0x0130,
+    "NVS_BLE_SYS_INFO_ID_1": 0x0131,
+    "NVS_BLE_SYS_INFO_ID_2": 0x0132,
+    "NVS_BLE_SYS_INFO_ID_3": 0x0133,
+    "NVS_BLE_SYS_INFO_ID_4": 0x0134,
+    "NVS_BLE_SYS_INFO_ID_5": 0x0135,
+    "NVS_BLE_SYS_INFO_ID_6": 0x0136,
+    "NVS_BLE_SYS_INFO_ID_7": 0x0137,
+    "NVS_BLE_SYS_INFO_ID_MAX": 0x0137,
+    "NVS_BLE_BOND_INFO_ID_0": 0x0138,
+    "NVS_BLE_BOND_INFO_ID_1": 0x0139,
+    "NVS_BLE_BOND_INFO_ID_2": 0x013A,
+    "NVS_BLE_BOND_INFO_ID_3": 0x013B,
+    "NVS_BLE_BOND_INFO_ID_4": 0x013C,
+    "NVS_BLE_BOND_INFO_ID_5": 0x013D,
+    "NVS_BLE_BOND_INFO_ID_6": 0x013E,
+    "NVS_BLE_BOND_INFO_ID_7": 0x013F,
+    "NVS_BLE_BOND_ID_MAX": 0x013F,
+    "NVS_BLE_LAST_GAP_ADDR_USED": 0x0140,
+
+    # Bulk identifiers
+    "NVS_BLE_CHMAP_CONFIG": 0x0251,
+
+    # Common/Nervous identifiers
+    "NVS_X1E02_STATE_ID": 0x0350,
+    "NVS_DFU_ID": 0x0360,
+    "NVS_MBR_STATUS_ID": 0x0361,
+    "NVS_DFU_CHECK_ID": 0x0362,
+    "NVS_APP_SECUR_LVL_ID": 0x0364,
+    "NVS_SD_SECUR_LVL_ID": 0x0365,
+
+    "NVS_EXTENDED_MODEL_ID": 0x0390,
+}
+
+CHUNK_ID_MAP_STM32H7 = {
+    "NVS_CHUNK_METHOD": True,
+    "NVS_WORD_SIZE": 16,
+
+    "NVS_INVALID_CHUNK_ID": 0x00,
+    "NVS_ACTIVE_BANK_ID": 0x01,
+    "NVS_EMPTY_CHUNK_ID": 0xFF,
+
+    # Important headers: [chunkID, chunkLength, chunkCRC]
+    "ACTIVE_BANK_HDR": [0x01, 0x00, 0x2E3E],
+    "TEMP_BANK_HDR": [0xFF, 0x00, 0x2E3E],
+    "INVALID_BANK_HDR": [0x00, 0x00, 0x0000],
+
+    "NVS_X1E02_STATE_ID": 0x02,
+    "NVS_TDE_MFG_ACCESS_ID": 0x03,
+    "NVS_EXTENDED_MODEL_ID": 0x04,
+    "NVS_SERIAL_NUMBER_ID": 0x05,
+    "NVS_DEVICE_NAME_ID": 0x06,
+    "NVS_USB_BTLDR_PID_ID": 0x07,
+    "NVS_USB_APP_PID_ID": 0x08,
+    "NVS_USB_MANUF_STRG_ID": 0x09,
+    "NVS_USB_BTLDR_PROD_STRG_ID": 0x0A,
+    "NVS_USB_APP_PROD_STRG_ID": 0x0B,
+    "NVS_X92E2_CAL_OFFSET_ID": 0x0C,
+    "NVS_DFU_ID": 0x0D,
+    "NVS_HW_VERSION_ID": 0x0E,
+    "NVS_VLP19A1_CONFIG_ID": 0x0F,
+    "NVS_UNIT_ID_ID": 0x10,
+    "NVS_USB_VID_ID": 0x11,
+}
+
+CHUNK_ID_MAP_STM32L052 = {
+    "NVS_CHUNK_METHOD": False,
+    "NVS_WORD_SIZE": 8,
+
+    "NVS_INVALID_CHUNK_ID": 0x00,
+    "NVS_ACTIVE_BANK_ID": 0x01,
+    "NVS_EMPTY_CHUNK_ID": 0xFF,
+
+    # Important headers: [chunkID, chunkLength, chunkCRC]
+    "ACTIVE_BANK_HDR": [0x00, 0x00, 0xF1D],
+    "TEMP_BANK_HDR": [0xFF, 0x00, 0x0000],
+    "INVALID_BANK_HDR": [0x00, 0x00, 0x0000],
+
+    # Chunk specifiers: [chunkStartAddress, chunkCRCStartAddress]
+    # Ensure the Chunk specifiers are in ascending order of Chunk Start Address.
+    "NVS_DFU_ID": [0x00, 0x02],
+    "NVS_REGULATORY_MODEL_NB_ID": [0x04, 0x0A],
+    "NVS_TDE_MFG_ACCESS_ID": [0x0C, 0x1C],
+    "NVS_BOOT_VERSION_ID": [0x1E, 0x20],
+    "NVS_MANUFACTURER_NAME_ID": [0x24, 0x2E],
+    "NVS_GO_TO_STATE_ID": [0x32, 0x33],
+    "NVS_APP_VERSION_ID": [0x37, 0x39],
+    "NVS_EXTENDED_MODEL_ID": [0x3D, 0x3E],
+    "NVS_SERIAL_NUMBER_ID": [0x42, 0x4E],
+    "NVS_USB_VID_ID": [0x52, 0x54],
+    "NVS_USB_BTLDR_PID_ID": [0x58, 0x5A],
+    "NVS_USB_APP_PID_ID": [0x5E, 0x60],
+    "NVS_PART_NB_ID": [0x64, 0x6E],
+    "NVS_USB_MANUF_STRG_ID": [0x72, 0x86],
+    "NVS_USB_BTLDR_PROD_STRG_ID": [0x8A, 0x9E],
+    "NVS_USB_APP_PROD_STRG_ID": [0xA2, 0xB6],
+    "NVS_HW_VERSION_ID": [0xBA, 0xBC],
+    "NVS_DEVICE_NAME_ID": [0xD4, 0x106],
+    "NVS_HW_BUILD_ID": [0x10A, 0x10C],
+    # CALIBRATION POINT
+    "NVS_HALL_SS_CALIB_MECH_MIN": [0x130, 0x132],
+    "NVS_HALL_SS_CALIB_MECH_MAX": [0x134, 0x136],
+    "NVS_HALL_SS_CALIB_MECH_MIN_UNUSED": [0x138, 0x13A],
+    "NVS_HALL_SS_CALIB_MECH_MAX_UNUSED": [0x13C, 0x13E],
+    "NVS_HALL_HB_CALIB_MECH_MIN_UNUSED": [0x150, 0x152],
+    "NVS_HALL_HB_CALIB_MECH_MAX_UNUSED": [0x154, 0x156],
+    "NVS_HALL_HB_CALIB_SENS_MIN": [0x158, 0x15A],
+    "NVS_HALL_HB_CALIB_SENS_MAX": [0x15C, 0x15E],
+    "NVS_HALL_SS_TP_1_UNUSED": [0x170, 0x172],
+    "NVS_HALL_SS_TP_2_UNUSED": [0x174, 0x176],
+    "NVS_HALL_HB_TP_1": [0x178, 0x17A],
+    "NVS_HALL_HB_TP_2_UNUSED": [0x17C, 0x17E],
+    "NVS_HALL_SS_CP_1_UNUSED": [0x190, 0x192],
+    "NVS_HALL_SS_CP_2_UNUSED": [0x194, 0x196],
+    "NVS_HALL_CALIB_PF_1_AXIS_DIR_DOWN": [0x1C0, 0x1C2],
+    "NVS_HALL_CALIB_PF_2_AXIS_DIR_UP": [0x1C4, 0x1C6],
+    # 0x0007 Device Friendly Name Location
+    "NVS_DEVICE_FRIENDLY_NAME_ID": [0x1D0, 0x1EE],
+    # 0x80A4 Axis Curve Point Location
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_1_ID": [0x200, 0x20E],
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_2_ID": [0x210, 0x21E],
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_3_ID": [0x220, 0x22E],
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_4_ID": [0x230, 0x23E],
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_5_ID": [0x240, 0x24E],
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_6_ID": [0x250, 0x25E],
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_7_ID": [0x260, 0x26E],
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_8_ID": [0x270, 0x27E],
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_9_ID": [0x280, 0x28E],
+    "NVS_x80a4_X_AXIS_CURVE_POINT_BLOCK_10_ID": [0x290, 0x29E],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_1_ID": [0x2A0, 0x2AE],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_2_ID": [0x2B0, 0x2BE],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_3_ID": [0x2C0, 0x2CE],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_4_ID": [0x2D0, 0x2DE],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_5_ID": [0x2E0, 0x2EE],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_6_ID": [0x2F0, 0x2FE],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_7_ID": [0x300, 0x30E],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_8_ID": [0x310, 0x31E],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_9_ID": [0x320, 0x32E],
+    "NVS_x80a4_Y_AXIS_CURVE_POINT_BLOCK_10_ID": [0x330, 0x332],
+    "NVS_x80a4_AXIS_CURVE_PARAMETER_ID": [0x340, 0x343],
+    "NVS_xF002_FILTER_TIME_WINDOW_ID": [0x34A, 0x34C],
+    "NVS_xF002_HYSTERESIS_ANGLE_ID": [0x34E, 0x34F],
+    "NVS_X1E02_STATE_ID": [0x360, 0x361],
+    "NVS_X80B1_AXIS_0_BAND_ID": [0x369, 0x378],
+    "NVS_X80B1_AXIS_1_BAND_ID": [0x37A, 0x384],
+    "NVS_FW_EXTRA_INFO_ID": [0x390, 0x3AE],
+    "NVS_SW_EXTRA_INFO_ID": [0x412, 0x430],
+}
+# ------------------------------------------------------------------------------
+# End of file
+# ------------------------------------------------------------------------------

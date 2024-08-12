@@ -1,0 +1,90 @@
+// -------------------------------------
+// Pipeline Configuration Section
+properties([
+    parameters([
+        string(name: 'BRANCH_NAME', defaultValue: 'lfa', description: 'project branch name on goldenpass', ),
+    ]),
+// End of Pipeline Configuration Section
+// -------------------------------------
+    pipelineTriggers([
+        // Trigger on every update on master 
+        gerrit(
+            serverName: 'goldenpass',
+            gerritProjects: [[
+                compareType: 'PLAIN',
+                pattern: "ccp_fw/${params.BRANCH_NAME}",
+                branches: [[ compareType: 'PLAIN', pattern: 'master' ]],
+                disableStrictForbiddenFileVerification: false
+            ]],
+            triggerOnEvents: [
+                patchsetCreated(excludeDrafts: true, excludeNoCodeChange: true)
+            ]
+        )
+    ]),
+])
+
+timestamps {
+
+    node ('builder_lfa') {
+
+        stage ('Build Job - Checkout') {
+            if (env.GERRIT_CHANGE_SUBJECT && env.GERRIT_CHANGE_OWNER_NAME) {
+                echo "ChangeLog: ${env.GERRIT_CHANGE_SUBJECT} from ${env.GERRIT_CHANGE_OWNER_NAME}"
+            }
+            if (env.GERRIT_REFSPEC) {
+                ref_spec = env.GERRIT_REFSPEC
+                branch_name = env.GERRIT_PATCHSET_REVISION
+            }
+            else
+            {
+                ref_spec = '+refs/heads/*:refs/remotes/origin/*'
+                branch_name = '*/master'
+            }
+            echo "Refspec for checkout: ${ref_spec}"
+            checkout([$class: 'GitSCM',
+                branches: [[name: "${branch_name}"]], doGenerateSubmoduleConfigurations: false,
+                extensions: [[ $class: 'CleanCheckout'],
+                    [$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: false,
+                    recursiveSubmodules: true, reference: '', trackingSubmodules: false
+                ]],
+                submoduleCfg: [],
+                userRemoteConfigs: [[credentialsId: 'Jenkins user',
+                    url: "ssh://Jenkins@goldenpass.logitech.com:29418/ccp_fw/${params.BRANCH_NAME}",
+                    refspec: "${ref_spec}"
+                ]]
+            ])
+        } // End of stage ('Build Job - Checkout')
+
+        stage ('Build Job - Build') {
+            script {
+                try {
+                  timeout(time: 10, unit: 'MINUTES', activity: true) {
+                    sh "git clean -x -f"
+                    // Shell build step
+                    sh """
+                      make test
+                      make clean
+                    """
+                    sh(returnStdout: true, script: '''#!/bin/bash
+                      if [ ! -z "$(git status --porcelain)" ]; then
+                        echo "Uncommitted changes in tracked files"
+                        echo "$(git status --porcelain)"
+                        exit 1
+                      fi
+                    '''.stripIndent())
+                  }
+                }
+                finally {
+                    archiveArtifacts allowEmptyArchive: false,
+                                     artifacts: """**/tests/**/*_tst*""",
+                                     caseSensitive: true,
+                                     defaultExcludes: true,
+                                     fingerprint: false,
+                                     onlyIfSuccessful: false
+                    // Clean workspace at build end
+                    cleanWs()
+                }
+            }
+        } // End of stage ('Build Job - Build')
+    } // End of node ('builder')
+} // End of timestamps
